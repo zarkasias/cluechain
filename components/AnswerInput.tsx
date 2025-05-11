@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, Animated } from 'react-native';
 import { ArrowRight as ArrowRightIcon } from 'lucide-react-native';
 
@@ -10,15 +10,25 @@ type AnswerInputProps = {
   showSuccess: boolean;
 };
 
-export default function AnswerInput({
+export type AnswerInputHandle = {
+  focus: () => void;
+};
+
+const AnswerInput = forwardRef<AnswerInputHandle, AnswerInputProps>(({
   value,
   onChangeText,
   onSubmit,
   showError,
   showSuccess,
-}: AnswerInputProps) {
+}, ref) => {
   const inputRef = useRef<TextInput>(null);
   const shakeAnim = useRef(new Animated.Value(0)).current;
+  
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      inputRef.current?.focus();
+    }
+  }));
   
   // Apply shake animation when error is shown
   useEffect(() => {
@@ -82,7 +92,7 @@ export default function AnswerInput({
       )}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -133,3 +143,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+
+export default AnswerInput;

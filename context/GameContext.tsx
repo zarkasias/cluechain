@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { wordChains } from '@/data/wordChains';
 
 // Types
@@ -13,14 +14,16 @@ type GameStats = {
   hintsUsed: number;
   wordsGuessed: number;
   bestTime: number | null;
+  totalPoints: number;
 };
 
 type GameState = {
   currentChain: WordChain;
   currentClueIndex: number;
-  hintRevealed: boolean;
+  hintLevel: number;
   solvedWords: string[];
   isChainCompleted: boolean;
+  currentPoints: number;
   stats: GameStats;
 };
 
@@ -28,20 +31,28 @@ type GameAction =
   | { type: 'CHECK_ANSWER'; payload: string }
   | { type: 'SHOW_HINT' }
   | { type: 'RESTART_CHAIN' }
-  | { type: 'LOAD_NEXT_CHAIN' };
+  | { type: 'LOAD_NEXT_CHAIN' }
+  | { type: 'LOAD_SAVED_STATS'; payload: GameStats };
+
+// Constants
+const POINTS_PER_CORRECT_ANSWER = 100;
+const POINTS_PER_HINT = 25;
+const MAX_HINT_LEVEL = 3;
 
 // Initial state
 const initialState: GameState = {
   currentChain: wordChains[0],
   currentClueIndex: 0,
-  hintRevealed: false,
+  hintLevel: 0,
   solvedWords: [],
   isChainCompleted: false,
+  currentPoints: 0,
   stats: {
     chainsCompleted: 0,
     hintsUsed: 0,
     wordsGuessed: 0,
     bestTime: null,
+    totalPoints: 0,
   },
 };
 
@@ -70,42 +81,60 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         const newIndex = state.currentClueIndex + 1;
         const isCompleted = newIndex >= state.currentChain.clues.length;
         
+        // Calculate points for correct answer
+        const earnedPoints = POINTS_PER_CORRECT_ANSWER;
+        const newCurrentPoints = state.currentPoints + earnedPoints;
+        
         // Update stats
         const newStats = {
           ...state.stats,
           wordsGuessed: state.stats.wordsGuessed + 1,
           chainsCompleted: isCompleted ? state.stats.chainsCompleted + 1 : state.stats.chainsCompleted,
+          totalPoints: state.stats.totalPoints + earnedPoints,
         };
         
         return {
           ...state,
           currentClueIndex: newIndex,
-          hintRevealed: false,
+          hintLevel: 0,
           solvedWords: newSolvedWords,
           isChainCompleted: isCompleted,
+          currentPoints: newCurrentPoints,
           stats: newStats,
         };
       }
       return state;
     }
     
-    case 'SHOW_HINT':
+    case 'SHOW_HINT': {
+      if (state.hintLevel >= MAX_HINT_LEVEL) {
+        return state;
+      }
+
+      const pointsDeduction = POINTS_PER_HINT * (state.hintLevel + 1);
+      const newCurrentPoints = Math.max(0, state.currentPoints - pointsDeduction);
+      
       return {
         ...state,
-        hintRevealed: true,
+        hintLevel: state.hintLevel + 1,
         stats: {
           ...state.stats,
           hintsUsed: state.stats.hintsUsed + 1,
+          totalPoints: Math.max(0, state.stats.totalPoints - pointsDeduction),
         },
+        currentPoints: newCurrentPoints,
       };
+    }
     
     case 'RESTART_CHAIN':
       return {
         ...state,
         currentClueIndex: 0,
-        hintRevealed: false,
+        hintLevel: 0,
         solvedWords: [],
         isChainCompleted: false,
+        currentPoints: 0,
+        stats: state.stats,
       };
     
     case 'LOAD_NEXT_CHAIN': {
@@ -123,11 +152,19 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         currentChain: wordChains[nextIndex],
         currentClueIndex: 0,
-        hintRevealed: false,
+        hintLevel: 0,
         solvedWords: [],
         isChainCompleted: false,
+        currentPoints: 0,
+        stats: state.stats,
       };
     }
+    
+    case 'LOAD_SAVED_STATS':
+      return {
+        ...state,
+        stats: action.payload,
+      };
     
     default:
       return state;
@@ -138,6 +175,34 @@ function gameReducer(state: GameState, action: GameAction): GameState {
 export function GameProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(gameReducer, initialState);
   
+  // Load saved stats when the app starts
+  useEffect(() => {
+    const loadSavedStats = async () => {
+      try {
+        const savedStats = await AsyncStorage.getItem('gameStats');
+        if (savedStats) {
+          const parsedStats = JSON.parse(savedStats);
+          dispatch({ type: 'LOAD_SAVED_STATS', payload: parsedStats });
+        }
+      } catch (error) {
+        console.error('Error loading saved stats:', error);
+      }
+    };
+    loadSavedStats();
+  }, []);
+
+  // Save stats whenever they change
+  useEffect(() => {
+    const saveStats = async () => {
+      try {
+        await AsyncStorage.setItem('gameStats', JSON.stringify(state.stats));
+      } catch (error) {
+        console.error('Error saving stats:', error);
+      }
+    };
+    saveStats();
+  }, [state.stats]);
+
   const value = { state, dispatch };
   
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

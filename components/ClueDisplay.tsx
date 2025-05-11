@@ -3,10 +3,11 @@ import { View, Text, StyleSheet } from 'react-native';
 
 type ClueDisplayProps = {
   clue: string;
-  hint: string | null;
+  answer?: string;
+  hintLevel: number;
 };
 
-export default function ClueDisplay({ clue, hint }: ClueDisplayProps) {
+export default function ClueDisplay({ clue, answer, hintLevel }: ClueDisplayProps) {
   // Process the clue to highlight the embedded words (in uppercase)
   const processClue = () => {
     if (!clue) return [];
@@ -44,8 +45,16 @@ export default function ClueDisplay({ clue, hint }: ClueDisplayProps) {
     
     return parts;
   };
+
+  const getHintText = () => {
+    if (!answer || hintLevel === 0) return null;
+    
+    const hintLength = Math.min(hintLevel, answer.length);
+    return answer.slice(0, hintLength).toUpperCase() + '...';
+  };
   
   const clueParts = processClue();
+  const hintText = getHintText();
   
   return (
     <View style={styles.container}>
@@ -62,12 +71,11 @@ export default function ClueDisplay({ clue, hint }: ClueDisplayProps) {
           ))}
         </Text>
         
-        {hint && (
+        {hintText && (
           <View style={styles.hintContainer}>
             <Text style={styles.hintLabel}>Hint:</Text>
             <View style={styles.hintBox}>
-              <Text style={styles.hintText}>{hint}</Text>
-              <Text style={styles.hintDots}>...</Text>
+              <Text style={styles.hintText}>{hintText}</Text>
             </View>
           </View>
         )}
@@ -126,9 +134,5 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: '#7c4dff',
-  },
-  hintDots: {
-    fontSize: 20,
-    color: '#999',
   },
 });

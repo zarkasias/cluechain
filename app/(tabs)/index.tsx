@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import GameScreen from '@/components/GameScreen';
-import { GameProvider } from '@/context/GameContext';
 
 export default function HomeScreen() {
   return (
@@ -9,9 +8,7 @@ export default function HomeScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <GameProvider>
-        <GameScreen />
-      </GameProvider>
+      <GameScreen />
     </KeyboardAvoidingView>
   );
 }
