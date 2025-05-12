@@ -2,6 +2,8 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-nat
 import { useGameState } from '@/context/GameContext';
 import { Ionicons } from '@expo/vector-icons';
 import { Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Colors } from '@/constants/Colors';
 
 type StatItemProps = {
   value: string | number;
@@ -33,6 +35,10 @@ export default function StatsScreen() {
   }
 
   return (
+    <LinearGradient
+      colors={[Colors.gradientStart, Colors.gradientMiddle, Colors.gradientEnd]}
+      style={styles.gradient}
+    >
     <View style={styles.container}>
       <ScrollView 
         contentContainerStyle={styles.contentContainer}
@@ -76,13 +82,16 @@ export default function StatsScreen() {
         </View>
       </ScrollView>
     </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
   },
   centered: {
     justifyContent: 'center',
@@ -98,12 +107,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: Platform.OS === 'ios' ? '700' : 'bold',
-    color: '#1a1a1a',
+    color: '#fff',
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 15,
-    color: '#64748b',
+    color: '#999',
   },
   statsContainer: {
     marginTop: 12,

@@ -1,6 +1,8 @@
 import React, { useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, Animated } from 'react-native';
 import { ArrowRight as ArrowRightIcon } from 'lucide-react-native';
+import { GradientView } from '@/components/GradientView';
+import { Colors, Gradients } from '@/constants/Colors';
 
 type AnswerInputProps = {
   value: string;
@@ -70,6 +72,7 @@ const AnswerInput = forwardRef<AnswerInputHandle, AnswerInputProps>(({
           onSubmitEditing={onSubmit}
           onKeyPress={handleKeyPress}
           placeholder="Type your answer..."
+          placeholderTextColor={Colors.textLight}
           autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="go"
@@ -77,13 +80,18 @@ const AnswerInput = forwardRef<AnswerInputHandle, AnswerInputProps>(({
         
         <TouchableOpacity
           style={[
-            styles.submitButton,
+            styles.submitButtonContainer,
             !value.trim() && styles.submitButtonDisabled
           ]}
           onPress={onSubmit}
           disabled={!value.trim()}
         >
-          <ArrowRightIcon color="#fff" size={20} />
+          <GradientView
+            colors={value.trim() ? Gradients.primary : [Colors.buttonDisabled, Colors.buttonDisabled]}
+            style={styles.submitButton}
+          >
+            <ArrowRightIcon color={Colors.textOnPrimary} size={20} />
+          </GradientView>
         </TouchableOpacity>
       </Animated.View>
       
@@ -102,43 +110,50 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#666',
+    color: Colors.text,
     marginBottom: 8,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#e0e0e0',
+    borderColor: Colors.border,
     overflow: 'hidden',
+    elevation: 2,
+    shadowColor: Colors.cardShadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
   inputError: {
-    borderColor: '#f44336',
+    borderColor: Colors.error,
   },
   inputSuccess: {
-    borderColor: '#4caf50',
+    borderColor: Colors.success,
   },
   input: {
     flex: 1,
     height: 56,
     paddingHorizontal: 16,
     fontSize: 18,
-    color: '#333',
+    color: Colors.text,
   },
-  submitButton: {
+  submitButtonContainer: {
     height: 56,
     width: 56,
-    backgroundColor: '#7c4dff',
+  },
+  submitButton: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   submitButtonDisabled: {
-    backgroundColor: '#c5c5c5',
+    opacity: 0.5,
   },
   errorText: {
-    color: '#f44336',
+    color: Colors.error,
     marginTop: 8,
     fontSize: 14,
   },

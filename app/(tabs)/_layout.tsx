@@ -2,16 +2,19 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { GameProvider } from '@/context/GameContext';
 import { Platform, View } from 'react-native';
+import { Colors, Gradients } from '@/constants/Colors';
 
-const TabBarIcon = ({ name, color }: { name: keyof typeof Ionicons.glyphMap; color: string }) => (
+const TabBarIcon = ({ name, color, focused }: { name: keyof typeof Ionicons.glyphMap; color: string; focused: boolean }) => (
   <View style={{
     alignItems: 'center',
     justifyContent: 'center',
-    height: 44,
+    backgroundColor: focused ? Colors.secondary : 'transparent',
+    borderRadius: 30,
+    padding: 10,
   }}>
     <Ionicons 
       name={name}
-      size={22} 
+      size={32} 
       color={color}
     />
   </View>
@@ -22,42 +25,33 @@ export default function TabLayout() {
     <GameProvider>
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: '#6366f1',
-          tabBarInactiveTintColor: '#94a3b8',
+          tabBarActiveTintColor: Colors.surface,
+          tabBarInactiveTintColor: Colors.surfaceHighlight,
           tabBarStyle: {
-            backgroundColor: '#ffffff',
-            borderTopWidth: 1,
-            borderTopColor: '#f1f5f9',
-            height: Platform.OS === 'ios' ? 88 : 64,
+            backgroundColor: '#60A5FA',
+            borderTopWidth: 0,
+            borderTopColor: 'transparent',
+            height: Platform.OS === 'ios' ? 88 : 84,
             paddingBottom: Platform.OS === 'ios' ? 28 : 8,
             paddingTop: 8,
           },
           tabBarLabelStyle: {
-            fontSize: 11,
-            letterSpacing: 0.3,
-            marginTop: 0,
-          },
-          headerStyle: {
-            backgroundColor: '#0b89d7',
-            borderBottomWidth: 1,
-            borderBottomColor: '#f1f5f9',
-          },
-          headerTintColor: '#0f172a',
-          headerTitleStyle: {
             fontSize: 16,
-            letterSpacing: 0.5,
-            fontWeight: '500',
+            letterSpacing: 0.3,
+            marginTop: 12,
           },
-          headerTitleAlign: 'center',
-          headerShadowVisible: false,
+          headerShown: false,
+          tabBarBackground: () => (
+            <View style={{ flex: 1, backgroundColor: '#60A5FA' }} />
+          ),
         }}>
         <Tabs.Screen
           name="index"
           options={{
             title: 'ClueChain',
             tabBarLabel: 'Play',
-            tabBarIcon: ({ color }) => (
-              <TabBarIcon name="play" color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon name="play" color={color} focused={focused} />
             ),
           }}
         />
@@ -66,8 +60,8 @@ export default function TabLayout() {
           options={{
             title: 'Guide',
             tabBarLabel: 'Guide',
-            tabBarIcon: ({ color }) => (
-              <TabBarIcon name="book-outline" color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon name="book-outline" color={color} focused={focused} />
             ),
           }}
         />
@@ -76,8 +70,8 @@ export default function TabLayout() {
           options={{
             title: 'Stats',
             tabBarLabel: 'Stats',
-            tabBarIcon: ({ color }) => (
-              <TabBarIcon name="stats-chart" color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon name="stats-chart" color={color} focused={focused} />
             ),
           }}
         />

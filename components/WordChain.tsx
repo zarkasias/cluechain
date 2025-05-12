@@ -1,68 +1,85 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { GradientView } from '@/components/GradientView';
+import { Colors, Gradients } from '@/constants/Colors';
 
 type WordChainProps = {
   solvedWords: string[];
 };
 
 export default function WordChain({ solvedWords }: WordChainProps) {
-  const { width } = useWindowDimensions();
-  
   if (solvedWords.length === 0) {
     return null;
   }
-  
+
   return (
-    <ScrollView 
-      style={styles.container}
-      contentContainerStyle={[
-        styles.scrollContent,
-        { maxWidth: width - 32 } // Account for container padding
-      ]}
-    >
-      {solvedWords.map((word, index) => (
-        <View key={index} style={styles.wordContainer}>
-          <Text style={styles.word}>{word}</Text>
-          {index < solvedWords.length - 1 && (
-            <View style={styles.connector} />
-          )}
-        </View>
-      ))}
-    </ScrollView>
+    <View style={styles.container}>
+      <Text style={styles.title}>Chain Progress</Text>
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {solvedWords.map((word, index) => (
+          <View key={`${word}-${index}`} style={styles.wordContainer}>
+            <GradientView
+              colors={Gradients.secondary}
+              style={styles.wordBadge}
+            >
+              <Text style={styles.word}>{word}</Text>
+            </GradientView>
+            {index < solvedWords.length - 1 && (
+              <View style={styles.arrow}>
+                <Text style={styles.arrowText}>→</Text>
+              </View>
+            )}
+          </View>
+        ))}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    maxHeight: 120, // Increased height to accommodate multiple rows
-    marginBottom: 20,
+    marginTop: 12,
+    paddingHorizontal: 22,
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: Colors.textOnPrimary,
+    marginBottom: 16,
+    paddingHorizontal: 4,
   },
   scrollContent: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    padding: 8,
-    gap: 8, // Consistent spacing between items
+    paddingHorizontal: 4,
   },
   wordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  wordBadge: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: Colors.cardShadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
   word: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#7c4dff',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: '#f0f0ff',
-    borderRadius: 20,
-    overflow: 'hidden',
-    textTransform: 'capitalize',
+    color: Colors.textOnPrimary,
   },
-  connector: {
-    width: 24,
-    height: 2,
-    backgroundColor: '#c5c5c5',
-    marginHorizontal: 8,
+  arrow: {
+    paddingHorizontal: 8,
+  },
+  arrowText: {
+    fontSize: 20,
+    color: Colors.textOnPrimary,
   },
 });

@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, Text, Animated } from 'react-native';
+import { View, StyleSheet, Text, Animated, Platform } from 'react-native';
+import { GradientView } from '@/components/GradientView';
 import ClueDisplay from './ClueDisplay';
 import AnswerInput, { AnswerInputHandle } from './AnswerInput';
 import WordChain from './WordChain';
 import GameControls from './GameControls';
 import { useGameState, useGameDispatch } from '@/context/GameContext';
+import { Colors, Gradients } from '@/constants/Colors';
 
 export default function GameScreen() {
   const { 
@@ -133,57 +135,72 @@ export default function GameScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.points}>Points: {currentPoints}</Text>
+        <Text style={styles.title}>ClueChain</Text>
+        <View style={styles.pointsWrapper}>
+          <GradientView
+            colors={Gradients.accent}
+            style={styles.pointsContainer}
+          >
+            <Text style={styles.points}>Points: {currentPoints}</Text>
+          </GradientView>
+        </View>
       </View>
 
       <WordChain solvedWords={solvedWords} />
       
-      <Animated.View 
-        style={[
-          styles.clueContainer, 
-          { 
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }]
-          }
-        ]}
-      >
-        {!isChainCompleted ? (
-          <>
-            <ClueDisplay 
-              clue={currentClueIndex < currentChain.clues.length ? currentChain.clues[currentClueIndex] : ''}
-              answer={currentClueIndex < currentChain.answers.length ? currentChain.answers[currentClueIndex] : undefined}
-              hintLevel={hintLevel}
-            />
-            
-            <AnswerInput 
-              ref={answerInputRef}
-              value={userAnswer}
-              onChangeText={setUserAnswer}
-              onSubmit={handleSubmit}
-              showError={showError}
-              showSuccess={showSuccess}
-            />
-          </>
-        ) : (
-          <View style={styles.completionContainer}>
-            <Text style={styles.completionTitle}>Chain Complete!</Text>
-            <Text style={styles.completionMessage}>
-              You've successfully completed the word chain!
-            </Text>
-            <Text style={styles.completionPoints}>
-              Points earned: {currentPoints}
-            </Text>
-          </View>
-        )}
-      </Animated.View>
-      
-      <GameControls 
-        onHint={handleShowHint}
-        onRestart={handleRestartChain}
-        onNextChain={handleNextChain}
-        hintDisabled={hintLevel >= 3 || isChainCompleted}
-        isCompleted={isChainCompleted}
-      />
+      <View style={styles.mainContent}>
+        <Animated.View 
+          style={[
+            styles.clueContainer, 
+            { 
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }]
+            }
+          ]}
+        >
+          {!isChainCompleted ? (
+            <GradientView
+              colors={[Colors.surface, Colors.surfaceHighlight]}
+              style={styles.contentCard}
+            >
+              <ClueDisplay 
+                clue={currentClueIndex < currentChain.clues.length ? currentChain.clues[currentClueIndex] : ''}
+                answer={currentClueIndex < currentChain.answers.length ? currentChain.answers[currentClueIndex] : undefined}
+                hintLevel={hintLevel}
+              />
+              
+              <AnswerInput 
+                ref={answerInputRef}
+                value={userAnswer}
+                onChangeText={setUserAnswer}
+                onSubmit={handleSubmit}
+                showError={showError}
+                showSuccess={showSuccess}
+              />
+            </GradientView>
+          ) : (
+            <>
+              <Text style={styles.completionTitle}>Chain Complete!</Text>
+              <Text style={styles.completionMessage}>
+                You've successfully completed the word chain!
+              </Text>
+              <Text style={styles.completionPoints}>
+                Points earned: {currentPoints}
+              </Text>
+            </>
+          )}
+        </Animated.View>
+      </View>
+
+      <View style={styles.footer}>
+        <GameControls 
+          onHint={handleShowHint}
+          onRestart={handleRestartChain}
+          onNextChain={handleNextChain}
+          hintDisabled={hintLevel >= 3 || isChainCompleted}
+          isCompleted={isChainCompleted}
+        />
+      </View>
     </View>
   );
 }
@@ -191,53 +208,96 @@ export default function GameScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    justifyContent: 'space-between',
+    backgroundColor: 'transparent',
+    padding: 0,
+    paddingBottom: Platform.OS === 'ios' ? 100 : 80,
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.header,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    alignItems: 'center',
+    paddingBottom: 16,
     marginBottom: 16,
+    marginTop: Platform.OS === 'ios' ? 60 : 0,
+  },
+  title: {
+    fontSize: 34,
+    fontFamily: 'Play-Bold',
+    padding: 16,
+    fontWeight: '600',
+    color: Colors.textOnPrimary,
+  },
+  pointsWrapper: {
+    flexShrink: 1,
+    flexGrow: 0,
+  },
+  pointsContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginRight: 16,
+    borderRadius: 20,
+    elevation: 2,
+    shadowColor: Colors.cardShadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   points: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#7c4dff',
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.textOnPrimary,
+    textAlign: 'center',
+  },
+  mainContent: {
+    flex: 1,
+    padding: 22,
+    justifyContent: 'center',
   },
   clueContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingBottom: 40,
-  },
-  completionContainer: {
-    alignItems: 'center',
-    backgroundColor: '#f0f8ff',
-    padding: 24,
-    borderRadius: 12,
     width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  },
+  contentCard: {
+    width: '100%',
+    padding: 20,
+    borderRadius: 16,
+    elevation: 4,
+    shadowColor: Colors.cardShadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+  },
+  completionCard: {
+    width: '100%',
+    padding: 24,
+    borderRadius: 16,
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: Colors.cardShadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
   },
   completionTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '700',
-    color: '#7c4dff',
-    marginBottom: 16,
+    color: Colors.textOnPrimary,
+    marginBottom: 12,
   },
   completionMessage: {
     fontSize: 16,
-    color: '#666',
+    color: Colors.textOnPrimary,
     textAlign: 'center',
-    lineHeight: 24,
     marginBottom: 16,
   },
   completionPoints: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#4caf50',
+    fontWeight: '600',
+    color: Colors.textOnPrimary,
+  },
+  footer: {
+    marginTop: 12,
   },
 });

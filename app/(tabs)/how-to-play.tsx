@@ -1,7 +1,13 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Colors } from '@/constants/Colors';
 
 export default function HowToPlayScreen() {
   return (
+    <LinearGradient
+      colors={[Colors.gradientStart, Colors.gradientMiddle, Colors.gradientEnd]}
+      style={styles.gradient}
+    >
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <View style={styles.card}>
         <Text style={styles.title}>How to Play ClueChain</Text>
@@ -61,22 +67,25 @@ export default function HowToPlayScreen() {
         </View>
       </View>
     </ScrollView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f9f9f9',
   },
   contentContainer: {
-    padding: 16,
+    padding: 14,
   },
   card: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#ffffff33',
     borderRadius: 12,
     padding: 24,
-    shadowColor: '#000',
+    shadowColor: '#fff',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -85,7 +94,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#333',
+    color: '#fff',
     marginBottom: 24,
     textAlign: 'center',
   },
@@ -112,29 +121,30 @@ const styles = StyleSheet.create({
   stepTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: '#fff',
     marginBottom: 8,
   },
   stepDescription: {
     fontSize: 16,
-    color: '#666',
+    color: '#fff',
     lineHeight: 24,
   },
   exampleBlock: {
-    marginTop: 16,
-    backgroundColor: '#f0f0f0',
-    padding: 16,
+    marginTop: 8,
+    backgroundColor: '#f0f0f055',
+    padding: 14,
     borderRadius: 8,
   },
   exampleTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: '#000',
     marginBottom: 8,
   },
   exampleText: {
-    fontSize: 15,
-    color: '#555',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1f1f1f',
     lineHeight: 24,
   },
 });

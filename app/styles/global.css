@@ -1,0 +1,12 @@
+
+html, body, #root, #__next {
+    background-color: transparent !important;
+    margin: 0;  /* Remove any default margin */
+    padding: 0; /* Remove any default padding */
+  }
+
+
+
+  /* div {
+    background-color: transparent !important;
+  } */
