@@ -95,6 +95,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: '#fff',
+    fontFamily: 'Play-Bold',
     marginBottom: 24,
     textAlign: 'center',
   },
@@ -123,6 +124,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
     marginBottom: 8,
+    fontFamily: 'Play-Bold',
   },
   stepDescription: {
     fontSize: 16,

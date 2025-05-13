@@ -1,38 +1,70 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet, Animated } from 'react-native';
+import { Text, Surface, TouchableRipple, useTheme } from 'react-native-paper';
 import { GradientView } from '@/components/GradientView';
 import { Colors, Gradients } from '@/constants/Colors';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 type WordChainProps = {
   solvedWords: string[];
+  onWordPress?: (word: string, index: number) => void;
 };
 
-export default function WordChain({ solvedWords }: WordChainProps) {
+export default function WordChain({ solvedWords, onWordPress }: WordChainProps) {
+  const theme = useTheme();
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
   if (solvedWords.length === 0) {
     return null;
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Chain Progress</Text>
-      <View style={styles.wordsContainer}>
+    <Surface style={styles.container} elevation={0}>
+      <Text variant="headlineMedium" style={styles.title}>Chain Progress</Text>
+      <Animated.View 
+        style={[
+          styles.wordsContainer,
+          { opacity: fadeAnim }
+        ]}
+      >
         {solvedWords.map((word, index) => (
           <View key={`${word}-${index}`} style={styles.wordContainer}>
-            <GradientView
-              colors={Gradients.secondary}
-              style={styles.wordBadge}
-            >
-              <Text style={styles.word}>{word}</Text>
-            </GradientView>
+            <Surface style={styles.wordBadge} elevation={2}>
+              <TouchableRipple
+                onPress={() => onWordPress?.(word, index)}
+                rippleColor={theme.colors.onSecondaryContainer}
+                style={styles.touchable}
+              >
+                <GradientView
+                  colors={Gradients.secondary}
+                  style={styles.gradientContent}
+                >
+                  <Text variant="titleMedium" style={styles.word}>{word}</Text>
+                </GradientView>
+              </TouchableRipple>
+            </Surface>
             {index < solvedWords.length - 1 && (
               <View style={styles.arrow}>
-                <Text style={styles.arrowText}>→</Text>
+                <MaterialCommunityIcons 
+                  name="arrow-right" 
+                  size={24} 
+                  color={Colors.textOnPrimary}
+                  style={styles.arrowIcon}
+                />
               </View>
             )}
           </View>
         ))}
-      </View>
-    </View>
+      </Animated.View>
+    </Surface>
   );
 }
 
@@ -41,10 +73,9 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingHorizontal: 22,
     marginBottom: 24,
+    backgroundColor: 'transparent',
   },
   title: {
-    fontSize: 24,
-    fontWeight: '600',
     fontFamily: 'Play-Bold',
     color: Colors.textOnPrimary,
     marginBottom: 16,
@@ -62,26 +93,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   wordBadge: {
-    paddingVertical: 8,
-    marginVertical: 4,
-    paddingHorizontal: 16,
     borderRadius: 10,
-    elevation: 2,
-    shadowColor: Colors.cardShadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    overflow: 'hidden',
+    marginVertical: 4,
+  },
+  touchable: {
+    borderRadius: 10,
+  },
+  gradientContent: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
   },
   word: {
-    fontSize: 18,
-    fontWeight: '600',
     color: Colors.textOnPrimary,
+    fontWeight: '600',
   },
   arrow: {
     paddingHorizontal: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  arrowText: {
-    fontSize: 20,
-    color: Colors.textOnPrimary,
+  arrowIcon: {
+    opacity: 0.9,
   },
 });

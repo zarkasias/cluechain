@@ -9,8 +9,8 @@ const TabBarIcon = ({ name, color, focused }: { name: keyof typeof Ionicons.glyp
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: focused ? Colors.secondary : 'transparent',
-    borderRadius: 30,
-    padding: 10,
+    borderRadius: 18,
+    padding: 12,
   }}>
     <Ionicons 
       name={name}
@@ -40,6 +40,7 @@ export default function TabLayout() {
             fontSize: 16,
             letterSpacing: 0.3,
             marginTop: 14,
+            fontFamily: 'Play-Bold',
           },
           headerShown: false,
           tabBarBackground: () => (

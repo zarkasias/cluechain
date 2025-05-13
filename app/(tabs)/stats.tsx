@@ -108,6 +108,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: Platform.OS === 'ios' ? '700' : 'bold',
     color: '#fff',
+    fontFamily: 'Play-Bold',
     marginBottom: 4,
   },
   subtitle: {
