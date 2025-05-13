@@ -44,7 +44,7 @@ export const Colors = {
   buttonDisabled: '#D1D5DB',
   inputBorder: '#E5E7EB',
   inputBorderFocus: '#6366F1',
-  cardShadow: 'rgba(0, 0, 0, 0.1)',
+  cardShadow: 'rgba(0, 0, 0, 0.2)',
 } as const;
 
 // Gradient combinations

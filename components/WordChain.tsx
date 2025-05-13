@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { GradientView } from '@/components/GradientView';
 import { Colors, Gradients } from '@/constants/Colors';
 
@@ -15,11 +15,7 @@ export default function WordChain({ solvedWords }: WordChainProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Chain Progress</Text>
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
+      <View style={styles.wordsContainer}>
         {solvedWords.map((word, index) => (
           <View key={`${word}-${index}`} style={styles.wordContainer}>
             <GradientView
@@ -35,7 +31,7 @@ export default function WordChain({ solvedWords }: WordChainProps) {
             )}
           </View>
         ))}
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -47,13 +43,18 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '600',
+    fontFamily: 'Play-Bold',
     color: Colors.textOnPrimary,
     marginBottom: 16,
     paddingHorizontal: 4,
   },
-  scrollContent: {
+  wordsContainer: {
+    marginTop: 12,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
     paddingHorizontal: 4,
   },
   wordContainer: {
@@ -62,8 +63,9 @@ const styles = StyleSheet.create({
   },
   wordBadge: {
     paddingVertical: 8,
+    marginVertical: 4,
     paddingHorizontal: 16,
-    borderRadius: 12,
+    borderRadius: 10,
     elevation: 2,
     shadowColor: Colors.cardShadow,
     shadowOffset: { width: 0, height: 2 },
@@ -71,7 +73,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   word: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: Colors.textOnPrimary,
   },

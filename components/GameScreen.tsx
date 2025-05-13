@@ -179,7 +179,10 @@ export default function GameScreen() {
               />
             </GradientView>
           ) : (
-            <>
+            <GradientView
+            colors={[Colors.surface, Colors.surfaceHighlight]}
+            style={styles.contentCard}
+          >
               <Text style={styles.completionTitle}>Chain Complete!</Text>
               <Text style={styles.completionMessage}>
                 You've successfully completed the word chain!
@@ -187,7 +190,7 @@ export default function GameScreen() {
               <Text style={styles.completionPoints}>
                 Points earned: {currentPoints}
               </Text>
-            </>
+              </GradientView>
           )}
         </Animated.View>
       </View>
@@ -216,8 +219,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     backgroundColor: Colors.header,
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
+    borderBottomLeftRadius: 6,
+    borderBottomRightRadius: 6,
+    shadowColor: Colors.cardShadow,
     alignItems: 'center',
     paddingBottom: 16,
     marginBottom: 16,
@@ -263,7 +267,7 @@ const styles = StyleSheet.create({
     width: '100%',
     padding: 20,
     borderRadius: 16,
-    elevation: 4,
+    elevation: 6,
     shadowColor: Colors.cardShadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -283,19 +287,20 @@ const styles = StyleSheet.create({
   completionTitle: {
     fontSize: 28,
     fontWeight: '700',
-    color: Colors.textOnPrimary,
+    fontFamily: 'Play-Bold',
+    color: Colors.textSecondary,
     marginBottom: 12,
   },
   completionMessage: {
     fontSize: 16,
-    color: Colors.textOnPrimary,
+    color: Colors.textSecondary,
     textAlign: 'center',
     marginBottom: 16,
   },
   completionPoints: {
     fontSize: 20,
     fontWeight: '600',
-    color: Colors.textOnPrimary,
+    color: Colors.textSecondary,
   },
   footer: {
     marginTop: 12,

@@ -29,16 +29,17 @@ export default function TabLayout() {
           tabBarInactiveTintColor: Colors.surfaceHighlight,
           tabBarStyle: {
             backgroundColor: '#60A5FA',
-            borderTopWidth: 0,
+            borderTopWidth: 4,
+            borderColor: 'transparent',
             borderTopColor: 'transparent',
-            height: Platform.OS === 'ios' ? 88 : 84,
-            paddingBottom: Platform.OS === 'ios' ? 28 : 8,
+            height: Platform.OS === 'ios' ? 88 : 88,
+            paddingBottom: Platform.OS === 'ios' ? 28 : 4,
             paddingTop: 8,
           },
           tabBarLabelStyle: {
             fontSize: 16,
             letterSpacing: 0.3,
-            marginTop: 12,
+            marginTop: 14,
           },
           headerShown: false,
           tabBarBackground: () => (
