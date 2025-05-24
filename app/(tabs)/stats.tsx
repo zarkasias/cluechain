@@ -35,18 +35,14 @@ export default function StatsScreen() {
   }
 
   return (
-    <LinearGradient
-      colors={[Colors.gradientStart, Colors.gradientMiddle, Colors.gradientEnd]}
-      style={styles.gradient}
-    >
-    <View style={styles.container}>
+   
+    <View style={{ flex: 1, backgroundColor: Colors.primary }}>
       <ScrollView 
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Game Statistics</Text>
-          <Text style={styles.subtitle}>Track your achievements</Text>
+          <Text style={styles.title}>Statistics</Text>
         </View>
 
         <View style={styles.statsContainer}>
@@ -82,7 +78,6 @@ export default function StatsScreen() {
         </View>
       </ScrollView>
     </View>
-    </LinearGradient>
   );
 }
 
@@ -102,11 +97,13 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 100 : 80,
   },
   header: {
+    marginTop: 18,
     marginBottom: 24,
   },
   title: {
-    fontSize: 28,
-    fontWeight: Platform.OS === 'ios' ? '700' : 'bold',
+    fontSize: 24,
+    textAlign: 'center',
+    fontWeight: Platform.OS === 'ios' ? '500' : 'bold',
     color: '#fff',
     fontFamily: 'Play-Bold',
     marginBottom: 4,

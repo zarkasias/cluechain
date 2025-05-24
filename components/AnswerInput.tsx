@@ -76,6 +76,7 @@ const AnswerInput = forwardRef<AnswerInputHandle, AnswerInputProps>(({
           autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="go"
+          autoFocus={false}
         />
         
         <TouchableOpacity
@@ -105,7 +106,7 @@ const AnswerInput = forwardRef<AnswerInputHandle, AnswerInputProps>(({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    marginBottom: 20,
+    marginBottom: 10,
   },
   label: {
     fontSize: 16,
@@ -135,14 +136,14 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    height: 56,
+    height: 46,
     paddingHorizontal: 16,
     fontSize: 18,
     color: Colors.text,
   },
   submitButtonContainer: {
-    height: 56,
-    width: 56,
+    height: 46,
+    width: 46,
   },
   submitButton: {
     flex: 1,

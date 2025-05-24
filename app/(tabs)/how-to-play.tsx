@@ -1,73 +1,55 @@
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '@/constants/Colors';
 
 export default function HowToPlayScreen() {
   return (
-    <LinearGradient
-      colors={[Colors.gradientStart, Colors.gradientMiddle, Colors.gradientEnd]}
-      style={styles.gradient}
-    >
+    <View style={{ flex: 1, backgroundColor: Colors.primary }}>
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <View style={styles.card}>
-        <Text style={styles.title}>How to Play ClueChain</Text>
+        <Text style={styles.title}>How to Play</Text>
         
         <View style={styles.instructionBlock}>
-          <Text style={styles.stepNumber}>1</Text>
           <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>Read the Clue</Text>
+            <Text style={styles.stepTitle}>Objective</Text>
             <Text style={styles.stepDescription}>
-              Each clue is a hint to a word you need to guess.
+            Connect words by finding a common clue. Each word in the chain must share a clue with the previous word.
             </Text>
           </View>
         </View>
         
-        <View style={styles.instructionBlock}>
-          <Text style={styles.stepNumber}>2</Text>
-          <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>Enter Your Answer</Text>
-            <Text style={styles.stepDescription}>
-              Type your answer in the input field and submit.
-            </Text>
-          </View>
-        </View>
         
         <View style={styles.instructionBlock}>
-          <Text style={styles.stepNumber}>3</Text>
           <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>Build the Chain</Text>
+            <Text style={styles.stepTitle}>Gameplay</Text>
             <Text style={styles.stepDescription}>
               Each correct answer becomes part of the next clue, forming a chain of related words.
             </Text>
           </View>
         </View>
-        
+
+        <View style={styles.imageContainer}>
+          <Image
+            source={require('@/assets/images/example.jpg')}
+            style={styles.gameplayImage}
+            resizeMode="cover"
+          />
+        </View>
+
         <View style={styles.instructionBlock}>
-          <Text style={styles.stepNumber}>4</Text>
           <View style={styles.stepContent}>
-            <Text style={styles.stepTitle}>Need Help?</Text>
+            <Text style={styles.stepTitle}>Scoring</Text>
             <Text style={styles.stepDescription}>
-              Use the hint button to reveal the first letter of the answer.
+            Points are awarded for each correct word in the chain. Points are removed per hint used.
             </Text>
           </View>
         </View>
         
-        <View style={styles.exampleBlock}>
-          <Text style={styles.exampleTitle}>Example:</Text>
-          <Text style={styles.exampleText}>
-            Clue 1: "Large gray animal with a trunk" {'\n'}
-            Answer: ELEPHANT{'\n\n'}
-            
-            Clue 2: "An ELEPHANT never forgets, and this organ is responsible for memory"{'\n'}
-            Answer: BRAIN{'\n\n'}
-            
-            Clue 3: "The BRAIN controls this vital organ that pumps blood"{'\n'}
-            Answer: HEART
-          </Text>
-        </View>
+        
+        
       </View>
     </ScrollView>
-    </LinearGradient>
+    </View>
   );
 }
 
@@ -82,10 +64,9 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   card: {
-    backgroundColor: '#ffffff33',
+    backgroundColor: 'transparent',
     borderRadius: 12,
     padding: 24,
-    shadowColor: '#fff',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -148,5 +129,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1f1f1f',
     lineHeight: 24,
+  },
+  imageContainer: {
+    marginTop: 16,
+    marginBottom: 24,
+    alignItems: 'center',
+  },
+  gameplayImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#ffffff33',
   },
 });

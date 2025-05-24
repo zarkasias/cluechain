@@ -1,18 +1,13 @@
 import { useEffect, useState } from 'react';
 import * as Font from 'expo-font';
 import { Platform } from 'react-native';
-import { Stack } from 'expo-router';
+import { Slot } from 'expo-router';
 import { GameProvider } from '@/context/GameContext';
 import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 import { Colors } from '@/constants/Colors';
-import { LinearGradient } from 'expo-linear-gradient';
-
 
 import './styles/global.css';
-
-
-
 
 export default function RootLayout() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
@@ -33,27 +28,12 @@ export default function RootLayout() {
 
   if (!fontsLoaded) return null;
 
-
   return (
-   
-      <GameProvider>
-         <LinearGradient
-    colors={[Colors.gradientStart, Colors.gradientMiddle, Colors.gradientEnd]}
-    style={{flex: 1}}
-  >
+    <GameProvider>
+      <View style={{ flex: 1, backgroundColor: Colors.primary }}>
         <StatusBar style="light" translucent backgroundColor="transparent" />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: {
-              backgroundColor: 'transparent',
-            },
-          }}
-        >
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        </LinearGradient>
-      </GameProvider>
-    
+        <Slot />
+      </View>
+    </GameProvider>
   );
 }

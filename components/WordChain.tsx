@@ -28,7 +28,6 @@ export default function WordChain({ solvedWords, onWordPress }: WordChainProps) 
 
   return (
     <Surface style={styles.container} elevation={0}>
-      <Text variant="headlineMedium" style={styles.title}>Chain Progress</Text>
       <Animated.View 
         style={[
           styles.wordsContainer,
@@ -70,23 +69,23 @@ export default function WordChain({ solvedWords, onWordPress }: WordChainProps) 
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 12,
-    paddingHorizontal: 22,
-    marginBottom: 24,
+    marginTop: 2,
+    paddingHorizontal: 12,
+    marginBottom: 10,
     backgroundColor: 'transparent',
   },
   title: {
     fontFamily: 'Play-Bold',
     color: Colors.textOnPrimary,
-    marginBottom: 16,
+    marginBottom: 6,
     paddingHorizontal: 4,
   },
   wordsContainer: {
-    marginTop: 12,
+    marginTop: 0,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-    paddingHorizontal: 4,
+    gap: 8,
+    paddingHorizontal: 2,
   },
   wordContainer: {
     flexDirection: 'row',
@@ -95,21 +94,22 @@ const styles = StyleSheet.create({
   wordBadge: {
     borderRadius: 10,
     overflow: 'hidden',
-    marginVertical: 4,
+    marginVertical: 2,
   },
   touchable: {
     borderRadius: 10,
   },
   gradientContent: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 12,
   },
   word: {
     color: Colors.textOnPrimary,
+    fontSize: 14,
     fontWeight: '600',
   },
   arrow: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 4,
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -2,9 +2,7 @@ export const Colors = {
 
   header: '#342998',
   // Primary colors
-  primary: '#5B4CFF', // Deep purple/indigo
-  primaryDark: '#4338CA', // Darker purple for gradients
-  primaryLight: '#6366F1', // Lighter purple for gradients
+  primary: '#15233D',
   
   // Secondary colors
   secondary: '#EC4899', // Pink/magenta
@@ -23,7 +21,7 @@ export const Colors = {
 
   // UI Elements
   surface: '#FFFFFF', // Card backgrounds
-  surfaceHighlight: '#F3F4F6', // Subtle highlight
+  surfaceHighlight: '#2a7ebc', // Subtle highlight
   border: '#E5E7EB', // Borders
   
   // Text colors

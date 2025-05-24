@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   clueCard: {
-    padding: 20,
+    padding: 16,
     borderRadius: 16,
     backgroundColor: Colors.surface,
     elevation: 2,
@@ -111,23 +111,23 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   clueText: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: '700',
     color: Colors.text,
-    marginBottom: 16,
+    marginBottom: 6,
   },
   highlightedText: {
     fontWeight: '700',
     color: '#7c4dff',
   },
   hintContainer: {
-    marginTop: 16,
+    marginTop: 10,
   },
   hintLabel: {
     fontSize: 14,
     fontWeight: '600',
     color: Colors.textSecondary,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   hintBadge: {
     paddingVertical: 8,
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   hintText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: Colors.textOnPrimary,
     letterSpacing: 2,

@@ -1,83 +1,80 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { GameProvider } from '@/context/GameContext';
 import { Platform, View } from 'react-native';
-import { Colors, Gradients } from '@/constants/Colors';
+import { Colors } from '@/constants/Colors';
 
 const TabBarIcon = ({ name, color, focused }: { name: keyof typeof Ionicons.glyphMap; color: string; focused: boolean }) => (
   <View style={{
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: focused ? Colors.secondary : 'transparent',
-    borderRadius: 18,
-    padding: 12,
+    backgroundColor: 'transparent',
+    padding: Platform.OS === 'ios' ? 4 : 12,
+    marginTop: Platform.OS === 'ios' ? 0 : 0,
   }}>
     <Ionicons 
       name={name}
-      size={32} 
-      color={color}
+      size={Platform.OS === 'ios' ? 22 : 32} 
+      color={focused ? Colors.secondary : color}
     />
   </View>
 );
 
 export default function TabLayout() {
   return (
-    <GameProvider>
-      <Tabs
-        screenOptions={{
-          tabBarActiveTintColor: Colors.surface,
-          tabBarInactiveTintColor: Colors.surfaceHighlight,
-          tabBarStyle: {
-            backgroundColor: '#60A5FA',
-            borderTopWidth: 4,
-            borderColor: 'transparent',
-            borderTopColor: 'transparent',
-            height: Platform.OS === 'ios' ? 88 : 88,
-            paddingBottom: Platform.OS === 'ios' ? 28 : 4,
-            paddingTop: 8,
-          },
-          tabBarLabelStyle: {
-            fontSize: 16,
-            letterSpacing: 0.3,
-            marginTop: 14,
-            fontFamily: 'Play-Bold',
-          },
-          headerShown: false,
-          tabBarBackground: () => (
-            <View style={{ flex: 1, backgroundColor: '#60A5FA' }} />
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: Colors.surface,
+        tabBarInactiveTintColor: Colors.surfaceHighlight,
+        tabBarStyle: {
+          backgroundColor: Colors.primary,
+          borderTopWidth: 4,
+          borderColor: 'transparent',
+          borderTopColor: 'transparent',
+          height: Platform.OS === 'ios' ? 96 : 88,
+          paddingBottom: Platform.OS === 'ios' ? 28 : 4,
+          paddingTop: Platform.OS === 'ios' ? 8 : 8,
+        },
+        tabBarLabelStyle: {
+          fontSize: Platform.OS === 'ios' ? 14 : 16,
+          letterSpacing: 0.3,
+          marginTop: Platform.OS === 'ios' ? 6 : 14,
+          fontFamily: 'Play-Bold',
+        },
+        headerShown: false,
+        tabBarBackground: () => (
+          <View style={{ flex: 1, backgroundColor: Colors.primary }} />
+        ),
+      }}>
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'ClueChain',
+          tabBarLabel: 'Play',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name="play" color={color} focused={focused} />
           ),
-        }}>
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: 'ClueChain',
-            tabBarLabel: 'Play',
-            tabBarIcon: ({ color, focused }) => (
-              <TabBarIcon name="play" color={color} focused={focused} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="how-to-play"
-          options={{
-            title: 'Guide',
-            tabBarLabel: 'Guide',
-            tabBarIcon: ({ color, focused }) => (
-              <TabBarIcon name="book-outline" color={color} focused={focused} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="stats"
-          options={{
-            title: 'Stats',
-            tabBarLabel: 'Stats',
-            tabBarIcon: ({ color, focused }) => (
-              <TabBarIcon name="stats-chart" color={color} focused={focused} />
-            ),
-          }}
-        />
-      </Tabs>
-    </GameProvider>
+        }}
+      />
+      <Tabs.Screen
+        name="how-to-play"
+        options={{
+          title: 'Guide',
+          tabBarLabel: 'Guide',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name="book-outline" color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="stats"
+        options={{
+          title: 'Stats',
+          tabBarLabel: 'Stats',
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name="stats-chart" color={color} focused={focused} />
+          ),
+        }}
+      />
+    </Tabs>
   );
 }
