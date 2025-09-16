@@ -3,6 +3,7 @@ import { View, StyleSheet, Animated } from 'react-native';
 import { Text, Surface, TouchableRipple, useTheme } from 'react-native-paper';
 import { GradientView } from '@/components/GradientView';
 import { Colors, Gradients } from '@/constants/Colors';
+import { Check } from 'lucide-react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 type WordChainProps = {
@@ -46,7 +47,7 @@ export default function WordChain({ solvedWords, onWordPress }: WordChainProps) 
                   colors={Gradients.secondary}
                   style={styles.gradientContent}
                 >
-                  <Text variant="titleMedium" style={styles.word}>{word}</Text>
+                  <Check size={18} color={Colors.textOnPrimary} />
                 </GradientView>
               </TouchableRipple>
             </Surface>
@@ -69,7 +70,7 @@ export default function WordChain({ solvedWords, onWordPress }: WordChainProps) 
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 2,
+    marginTop: 0,
     paddingHorizontal: 12,
     marginBottom: 10,
     backgroundColor: 'transparent',
@@ -84,15 +85,15 @@ const styles = StyleSheet.create({
     marginTop: 0,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    paddingHorizontal: 2,
+    gap: 6,
+    paddingHorizontal: 1,
   },
   wordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   wordBadge: {
-    borderRadius: 10,
+    borderRadius: 20,
     overflow: 'hidden',
     marginVertical: 2,
   },
@@ -101,7 +102,7 @@ const styles = StyleSheet.create({
   },
   gradientContent: {
     paddingVertical: 4,
-    paddingHorizontal: 12,
+    paddingHorizontal: 6,
   },
   word: {
     color: Colors.textOnPrimary,
@@ -109,7 +110,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   arrow: {
-    paddingHorizontal: 4,
+    paddingHorizontal: 1,
+    marginLeft: 4,
     justifyContent: 'center',
     alignItems: 'center',
   },

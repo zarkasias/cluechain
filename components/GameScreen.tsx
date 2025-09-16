@@ -203,7 +203,7 @@ export default function GameScreen() {
             </GradientView>
           ) : (
             <GradientView
-              colors={[Colors.surface, Colors.surfaceHighlight]}
+              colors={[Colors.surface, Colors.surfaceSecondary]}
               style={styles.contentCard}
             >
               <Text style={styles.completionTitle}>Chain Complete!</Text>
@@ -242,8 +242,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: Colors.primary,
     alignItems: 'center',
-    paddingBottom: 6,
-    marginBottom: 6,
+    paddingBottom: 3,
+    marginBottom: 3,
     marginTop: Platform.OS === 'ios' ? 35 : 0,
   },
   title: {
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
   },
   contentCard: {
     width: '100%',
-    padding: 14,
+    padding: 8,
     borderRadius: 16,
     elevation: 6,
     shadowColor: Colors.cardShadow,
@@ -309,13 +309,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontFamily: 'Play-Bold',
     color: Colors.secondary,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   completionMessage: {
     fontSize: 16,
-    color: Colors.secondary,
-    textAlign: 'center',
-    marginBottom: 16,
+    fontWeight: 'bold',
+    color: Colors.primary,
+    textAlign: 'left',
+    marginBottom: 10,
   },
   completionPoints: {
     fontSize: 20,

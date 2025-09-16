@@ -21,6 +21,7 @@ export const Colors = {
 
   // UI Elements
   surface: '#FFFFFF', // Card backgrounds
+  surfaceSecondary: '#CECFD2', // Secondary card backgrounds
   surfaceHighlight: '#2a7ebc', // Subtle highlight
   border: '#E5E7EB', // Borders
   
