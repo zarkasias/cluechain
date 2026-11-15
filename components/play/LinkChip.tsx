@@ -2,11 +2,12 @@ import React, { useEffect } from 'react';
 import { StyleSheet, TextStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
+  withDelay,
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
+import { useReduceMotion } from '@/context/GameContext';
 import { color, radius } from '@/constants/theme';
 
 type LinkChipProps = {
@@ -20,12 +21,16 @@ type LinkChipProps = {
 
 /** The previous answer shown inside a clue: a pink chip with the word in uppercase. */
 export default function LinkChip({ word, textStyle, pulse, maxFontSizeMultiplier }: LinkChipProps) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReduceMotion();
   const scale = useSharedValue(1);
 
   useEffect(() => {
     if (!pulse || reduceMotion) return;
-    scale.value = withSequence(withTiming(1.08, { duration: 140 }), withTiming(1, { duration: 160 }));
+    // Wait for the clue's crossfade-in (200 ms) so the pulse is seen.
+    scale.value = withDelay(
+      200,
+      withSequence(withTiming(1.08, { duration: 140 }), withTiming(1, { duration: 160 })),
+    );
   }, [pulse, reduceMotion, scale]);
 
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));

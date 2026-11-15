@@ -34,6 +34,12 @@ describe('loadSave', () => {
     expect(console.warn).toHaveBeenCalled();
   });
 
+  it('defaults reduceMotion to null (follow the system) for older saves', async () => {
+    const old = { ...freshSave(), settings: { seenTutorial: true, haptics: false } };
+    const { store } = memoryStore({ [SAVE_KEY]: JSON.stringify(old) });
+    expect((await loadSave(store)).settings).toEqual({ seenTutorial: true, haptics: false, reduceMotion: null });
+  });
+
   it('starts fresh on a save with the wrong version', async () => {
     const { store } = memoryStore({ [SAVE_KEY]: JSON.stringify({ version: 1 }) });
     expect(await loadSave(store)).toEqual(freshSave());
@@ -42,6 +48,7 @@ describe('loadSave', () => {
   it('round-trips a v2 save', async () => {
     const save = freshSave();
     save.stats.totalPoints = 42;
+    save.settings.reduceMotion = true;
     save.history['classic-01'] = { stars: 2, bestScore: 400, bestTimeMs: 1000, firstCompletedAt: 'x' };
     const { store } = memoryStore({ [SAVE_KEY]: JSON.stringify(save) });
     expect(await loadSave(store)).toEqual(save);

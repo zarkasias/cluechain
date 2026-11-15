@@ -56,6 +56,8 @@ export type History = Record<string, HistoryEntry>;
 export type Settings = {
   seenTutorial: boolean;
   haptics: boolean;
+  /** Override for reduced motion. `null` follows the system setting. */
+  reduceMotion: boolean | null;
 };
 
 export type Progress = {

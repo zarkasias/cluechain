@@ -52,6 +52,7 @@ function coerceSettings(raw: unknown): Settings {
   return {
     seenTutorial: typeof raw.seenTutorial === 'boolean' ? raw.seenTutorial : base.seenTutorial,
     haptics: typeof raw.haptics === 'boolean' ? raw.haptics : base.haptics,
+    reduceMotion: typeof raw.reduceMotion === 'boolean' ? raw.reduceMotion : null,
   };
 }
 

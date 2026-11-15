@@ -2,12 +2,12 @@ import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } f
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
 import { ArrowRight } from 'lucide-react-native';
+import { useReduceMotion } from '@/context/GameContext';
 import { color, radius, space } from '@/constants/theme';
 
 export type InputTone = 'wrong' | 'near' | 'correct' | null;
@@ -30,7 +30,7 @@ const AnswerInput = forwardRef<AnswerInputHandle, AnswerInputProps>(
   ({ value, onChangeText, onSubmit, tone, shakeKey, disabled }, ref) => {
     const inputRef = useRef<React.ComponentRef<typeof TextInput>>(null);
     const [focused, setFocused] = useState(false);
-    const reduceMotion = useReducedMotion();
+    const reduceMotion = useReduceMotion();
     const shake = useSharedValue(0);
 
     useImperativeHandle(ref, () => ({ focus: () => inputRef.current?.focus() }));

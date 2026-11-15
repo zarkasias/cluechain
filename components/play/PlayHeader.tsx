@@ -2,12 +2,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
 import { Star } from 'lucide-react-native';
 import type { Difficulty } from '@/lib/game';
+import { useReduceMotion } from '@/context/GameContext';
 import { color, motion, radius, space, type } from '@/constants/theme';
 
 type PlayHeaderProps = {
@@ -54,7 +54,7 @@ function useCountUp(target: number, duration: number, animate: boolean) {
 }
 
 export default function PlayHeader({ chainNumber, totalChains, difficulty, title, score, compact }: PlayHeaderProps) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReduceMotion();
   const shown = useCountUp(score, motion.slow, !reduceMotion);
 
   // "+N" float-up when points are earned.
@@ -70,7 +70,7 @@ export default function PlayHeader({ chainNumber, totalChains, difficulty, title
     setDelta(gained);
     floatY.value = 0;
     floatOpacity.value = 1;
-    floatY.value = withTiming(-28, { duration: motion.slow });
+    floatY.value = withTiming(-14, { duration: motion.slow });
     floatOpacity.value = withTiming(0, { duration: motion.slow });
   }, [score, reduceMotion, floatY, floatOpacity]);
 
@@ -146,9 +146,12 @@ const styles = StyleSheet.create({
     color: color.gold,
     fontVariant: ['tabular-nums'],
   },
+  // Floats up beside the pill (to its left) so it never covers the number or leaves the screen.
   float: {
     position: 'absolute',
-    top: -6,
+    right: '100%',
+    marginRight: space.sm,
+    top: 8,
     fontFamily: 'Play-Bold',
     fontSize: 16,
     color: color.gold,

@@ -1,10 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withRepeat,
   withTiming,
@@ -12,6 +11,7 @@ import Animated, {
 import { Eye } from 'lucide-react-native';
 import { answerLetters } from '@/lib/game';
 import type { Chain, LinkState } from '@/lib/game';
+import { useReduceMotion } from '@/context/GameContext';
 import { color, radius, space } from '@/constants/theme';
 
 type ChainTrackProps = {
@@ -29,7 +29,7 @@ function slotState(link: LinkState, index: number, currentIndex: number): SlotSt
 }
 
 function CurrentGlow() {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReduceMotion();
   const opacity = useSharedValue(1);
 
   useEffect(() => {
@@ -43,24 +43,65 @@ function CurrentGlow() {
   return <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.glow, style]} />;
 }
 
-export default function ChainTrack({ chain, links, currentIndex }: ChainTrackProps) {
+export type Rect = { x: number; y: number; width: number; height: number };
+
+export type ChainTrackHandle = {
+  /** Scroll so slot `index` is centred (immediately when `animated` is false). */
+  scrollToSlot: (index: number, animated: boolean) => void;
+  /** The slot's rectangle in window coordinates. */
+  measureSlot: (index: number) => Promise<Rect | null>;
+};
+
+/** The bar between two slots. It fills left to right when the slot on its left is solved. */
+function Connector({ filled }: { filled: boolean }) {
+  const reduceMotion = useReduceMotion();
+  const width = useSharedValue(filled ? CONNECTOR_WIDTH : 0);
+
+  useEffect(() => {
+    const target = filled ? CONNECTOR_WIDTH : 0;
+    width.value = reduceMotion || !filled ? target : withTiming(target, { duration: 150 });
+  }, [filled, reduceMotion, width]);
+
+  const fillStyle = useAnimatedStyle(() => ({ width: width.value }));
+  return (
+    <View style={styles.connector}>
+      <Animated.View style={[styles.connectorFill, fillStyle]} />
+    </View>
+  );
+}
+
+const ChainTrack = forwardRef<ChainTrackHandle, ChainTrackProps>(function ChainTrack(
+  { chain, links, currentIndex },
+  ref,
+) {
   const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
+  const slotRefs = useRef<(React.ComponentRef<typeof View> | null)[]>([]);
   const slotX = useRef<number[]>([]);
+  const slotW = useRef<number[]>([]);
   const viewportWidth = useRef(0);
 
-  const slotW = useRef<number[]>([]);
+  const scrollToSlot = (index: number, animated: boolean) => {
+    const x = slotX.current[index];
+    const w = slotW.current[index] ?? 0;
+    if (x === undefined) return;
+    scrollRef.current?.scrollTo({ x: Math.max(0, x + w / 2 - viewportWidth.current / 2), animated });
+  };
 
   /** Centre the current slot; when the chain is complete, show the end of the track. */
   const scrollToCurrent = () => {
-    if (currentIndex < 0) {
-      scrollRef.current?.scrollToEnd({ animated: true });
-      return;
-    }
-    const x = slotX.current[currentIndex];
-    const w = slotW.current[currentIndex] ?? 0;
-    if (x === undefined) return;
-    scrollRef.current?.scrollTo({ x: Math.max(0, x + w / 2 - viewportWidth.current / 2), animated: true });
+    if (currentIndex < 0) scrollRef.current?.scrollToEnd({ animated: true });
+    else scrollToSlot(currentIndex, true);
   };
+
+  useImperativeHandle(ref, () => ({
+    scrollToSlot,
+    measureSlot: (index) =>
+      new Promise((resolve) => {
+        const node = slotRefs.current[index];
+        if (!node) return resolve(null);
+        node.measureInWindow((x, y, width, height) => resolve({ x, y, width, height }));
+      }),
+  }));
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(scrollToCurrent, [currentIndex]);
@@ -78,6 +119,8 @@ export default function ChainTrack({ chain, links, currentIndex }: ChainTrackPro
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.row}
         importantForAccessibility="no-hide-descendants"
+        // Slots change width as they fill; keep the end in view once the chain is complete.
+        onContentSizeChange={() => currentIndex < 0 && scrollRef.current?.scrollToEnd({ animated: true })}
       >
         {chain.links.map((link, i) => {
           const state = slotState(links[i], i, currentIndex);
@@ -88,15 +131,20 @@ export default function ChainTrack({ chain, links, currentIndex }: ChainTrackPro
               key={i}
               style={styles.slotWrap}
               onLayout={(e) => {
-                slotX.current[i] = e.nativeEvent.layout.x;
-                slotW.current[i] = e.nativeEvent.layout.width;
+                // The wrapper holds [connector][slot]; record the slot's own x and width.
+                const offset = i > 0 ? CONNECTOR_WIDTH : 0;
+                slotX.current[i] = e.nativeEvent.layout.x + offset;
+                slotW.current[i] = e.nativeEvent.layout.width - offset;
                 if (i === currentIndex || (currentIndex < 0 && i === links.length - 1)) scrollToCurrent();
               }}
             >
-              {i > 0 && (
-                <View style={[styles.connector, links[i - 1]?.solved && styles.connectorFilled]} />
-              )}
-              <View style={[styles.slot, slotStyles[state]]}>
+              {i > 0 && <Connector filled={!!links[i - 1]?.solved} />}
+              <View
+                ref={(node) => {
+                  slotRefs.current[i] = node;
+                }}
+                style={[styles.slot, slotStyles[state]]}
+              >
                 {state === 'current' && <CurrentGlow />}
                 {state === 'solved' && (
                   <Text style={styles.word} maxFontSizeMultiplier={1.3}>
@@ -126,8 +174,11 @@ export default function ChainTrack({ chain, links, currentIndex }: ChainTrackPro
       </ScrollView>
     </View>
   );
-}
+});
 
+export default ChainTrack;
+
+const CONNECTOR_WIDTH = 14;
 const SLOT_HEIGHT = 44;
 
 const styles = StyleSheet.create({
@@ -140,11 +191,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   connector: {
-    width: 14,
+    width: CONNECTOR_WIDTH,
     height: 2,
     backgroundColor: color.slotEmpty,
   },
-  connectorFilled: {
+  connectorFill: {
+    height: 2,
     backgroundColor: color.link,
   },
   slot: {

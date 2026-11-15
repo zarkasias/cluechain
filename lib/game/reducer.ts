@@ -6,7 +6,7 @@ import type { Chain, ChainResult, GameAction, GameState, LinkState, SaveV2, Sett
 export const LINKS_PER_CHAIN = 5;
 
 export function defaultSettings(): Settings {
-  return { seenTutorial: false, haptics: true };
+  return { seenTutorial: false, haptics: true, reduceMotion: null };
 }
 
 function freshLinks(): LinkState[] {

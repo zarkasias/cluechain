@@ -1,5 +1,6 @@
 import React, { createContext, ReactNode, useContext, useEffect, useMemo, useReducer, useRef } from 'react';
 import { AppState } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
 import { chains } from '@/data/chains';
@@ -71,6 +72,13 @@ export function useGameDispatch() {
 
 export function useChains() {
   return useGameContext().chains;
+}
+
+/** True when motion should be reduced: `settings.reduceMotion` if set, otherwise the system setting. */
+export function useReduceMotion(): boolean {
+  const system = useReducedMotion();
+  const override = useGameContext().state.settings.reduceMotion;
+  return override ?? system;
 }
 
 const TICK_MS = 1000;

@@ -1,13 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
 import { answerWords } from '@/lib/game';
 import type { Link } from '@/lib/game';
+import type { Rect } from './ChainTrack';
+import { useReduceMotion } from '@/context/GameContext';
 import { color, motion, radius, space } from '@/constants/theme';
 
 export type TileFill = 'correct' | 'revealed' | null;
@@ -36,7 +37,7 @@ export function tileSize(width: number, words: string[], max = 44): number {
 type TileProps = { letter: string; shown: boolean; tone: 'empty' | 'hinted' | 'correct'; size: number };
 
 function Tile({ letter, shown, tone, size }: TileProps) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReduceMotion();
   const rotate = useSharedValue(0);
   const wasShown = useRef(shown);
 
@@ -66,12 +67,30 @@ function Tile({ letter, shown, tone, size }: TileProps) {
   );
 }
 
-export default function LetterTiles({ link, hintLetters, fill = null, maxSize = 44 }: LetterTilesProps) {
+export type LetterTilesHandle = {
+  /** The tile row's rectangle in window coordinates. */
+  measure: () => Promise<Rect | null>;
+};
+
+const LetterTiles = forwardRef<LetterTilesHandle, LetterTilesProps>(function LetterTiles(
+  { link, hintLetters, fill = null, maxSize = 44 },
+  ref,
+) {
+  const rowRef = useRef<React.ComponentRef<typeof View>>(null);
+  useImperativeHandle(ref, () => ({
+    measure: () =>
+      new Promise((resolve) => {
+        const node = rowRef.current;
+        if (!node) return resolve(null);
+        node.measureInWindow((x, y, width, height) => resolve({ x, y, width, height }));
+      }),
+  }));
+
   const words = answerWords(link);
   const total = words.reduce((n, w) => n + w.length, 0);
   const [width, setWidth] = useState(0);
   const [filled, setFilled] = useState(0);
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReduceMotion();
 
   // Staggered fill for a solve or a reveal.
   useEffect(() => {
@@ -101,6 +120,7 @@ export default function LetterTiles({ link, hintLetters, fill = null, maxSize = 
   let index = 0;
   return (
     <View
+      ref={rowRef}
       style={styles.row}
       onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
       accessible
@@ -119,7 +139,9 @@ export default function LetterTiles({ link, hintLetters, fill = null, maxSize = 
       ))}
     </View>
   );
-}
+});
+
+export default LetterTiles;
 
 const styles = StyleSheet.create({
   row: {

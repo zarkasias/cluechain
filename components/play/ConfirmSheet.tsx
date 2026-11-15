@@ -3,11 +3,11 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useReduceMotion } from '@/context/GameContext';
 import { color, layout, motion, radius, space, type } from '@/constants/theme';
 
 type ConfirmSheetProps = {
@@ -33,7 +33,7 @@ export default function ConfirmSheet({
   onCancel,
 }: ConfirmSheetProps) {
   const insets = useSafeAreaInsets();
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReduceMotion();
   const [mounted, setMounted] = useState(visible);
   const progress = useSharedValue(0);
 
