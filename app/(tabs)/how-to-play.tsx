@@ -1,5 +1,4 @@
 import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '@/constants/Colors';
 
 export default function HowToPlayScreen() {
@@ -13,7 +12,7 @@ export default function HowToPlayScreen() {
           <View style={styles.stepContent}>
             <Text style={styles.stepTitle}>Objective</Text>
             <Text style={styles.stepDescription}>
-            Connect words by finding a common clue. Each word in the chain must share a clue with the previous word.
+            Solve the clue. Your answer becomes part of the next clue. Link five answers to complete the chain.
             </Text>
           </View>
         </View>
@@ -54,9 +53,6 @@ export default function HowToPlayScreen() {
 }
 
 const styles = StyleSheet.create({
-  gradient: {
-    flex: 1,
-  },
   container: {
     flex: 1,
   },
@@ -85,18 +81,6 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     alignItems: 'flex-start',
   },
-  stepNumber: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#7c4dff',
-    color: '#fff',
-    textAlign: 'center',
-    lineHeight: 32,
-    fontSize: 16,
-    fontWeight: '600',
-    marginRight: 16,
-  },
   stepContent: {
     flex: 1,
   },
@@ -110,24 +94,6 @@ const styles = StyleSheet.create({
   stepDescription: {
     fontSize: 16,
     color: '#fff',
-    lineHeight: 24,
-  },
-  exampleBlock: {
-    marginTop: 8,
-    backgroundColor: '#f0f0f055',
-    padding: 14,
-    borderRadius: 8,
-  },
-  exampleTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 8,
-  },
-  exampleText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f1f1f',
     lineHeight: 24,
   },
   imageContainer: {

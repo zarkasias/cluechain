@@ -1,86 +1,37 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { GradientView } from '@/components/GradientView';
+import { answerLetters, parseClue } from '@/lib/game';
+import type { Link } from '@/lib/game';
 import { Colors, Gradients } from '@/constants/Colors';
 
 type ClueDisplayProps = {
-  clue: string;
-  answer?: string;
-  hintLevel: number;
+  link: Link;
+  hintLetters: number;
 };
 
-export default function ClueDisplay({ clue, answer, hintLevel }: ClueDisplayProps) {
-  // Process the clue to highlight the embedded words (in uppercase)
-  const processClue = () => {
-    if (!clue) return [];
-    
-    const parts = [];
-    let currentText = '';
-    let inUpperCase = false;
-    
-    for (let i = 0; i < clue.length; i++) {
-      const char = clue[i];
-      const isUpperCase = char === char.toUpperCase() && char !== char.toLowerCase();
-      
-      if (isUpperCase && !inUpperCase) {
-        // Start of uppercase section
-        if (currentText) {
-          parts.push({ text: currentText, highlight: false });
-          currentText = '';
-        }
-        inUpperCase = true;
-        currentText += char;
-      } else if (!isUpperCase && inUpperCase) {
-        // End of uppercase section
-        parts.push({ text: currentText, highlight: true });
-        currentText = char;
-        inUpperCase = false;
-      } else {
-        // Continue current section
-        currentText += char;
-      }
-    }
-    
-    if (currentText) {
-      parts.push({ text: currentText, highlight: inUpperCase });
-    }
-    
-    return parts;
-  };
+export default function ClueDisplay({ link, hintLetters }: ClueDisplayProps) {
+  const segments = parseClue(link.clue);
+  const letters = answerLetters(link);
+  const hintText = letters.slice(0, hintLetters) + '•'.repeat(Math.max(0, letters.length - hintLetters));
 
-  const getHintText = () => {
-    if (!answer || hintLevel === 0) return '';
-    return answer.slice(0, hintLevel).toUpperCase() + '•'.repeat(Math.max(0, answer.length - hintLevel));
-  };
-  
-  const clueParts = processClue();
-  
   return (
     <View style={styles.container}>
-      <GradientView
-        colors={[Colors.surface, Colors.surfaceHighlight]}
-        style={styles.clueCard}
-      >
+      <GradientView colors={[Colors.surface, Colors.surfaceHighlight]} style={styles.clueCard}>
         <Text style={styles.clueLabel}>Clue:</Text>
         <Text style={styles.clueText}>
-          {clueParts.map((part, index) => (
-            <Text
-              key={index}
-              style={part.highlight ? styles.highlightedText : null}
-            >
+          {segments.map((part, index) => (
+            <Text key={index} style={part.isLink ? styles.highlightedText : null}>
               {part.text}
             </Text>
           ))}
         </Text>
-        
-        {hintLevel > 0 && (
+
+        {hintLetters > 0 && (
           <View style={styles.hintContainer}>
             <Text style={styles.hintLabel}>Hint:</Text>
-            <GradientView
-              colors={Gradients.secondary}
-              style={styles.hintBadge}
-            >
-              <Text style={styles.hintText}>{getHintText()}</Text>
+            <GradientView colors={Gradients.secondary} style={styles.hintBadge}>
+              <Text style={styles.hintText}>{hintText}</Text>
             </GradientView>
           </View>
         )}
@@ -118,7 +69,7 @@ const styles = StyleSheet.create({
   },
   highlightedText: {
     fontWeight: '700',
-    color: '#7c4dff',
+    color: Colors.secondaryDark,
   },
   hintContainer: {
     marginTop: 10,

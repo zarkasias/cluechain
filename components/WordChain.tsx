@@ -1,88 +1,56 @@
-import React from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
-import { Text, Surface, TouchableRipple, useTheme } from 'react-native-paper';
-import { GradientView } from '@/components/GradientView';
-import { Colors, Gradients } from '@/constants/Colors';
+import React, { useEffect, useRef } from 'react';
+import { Animated, StyleSheet, View } from 'react-native';
 import { Check } from 'lucide-react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { GradientView } from '@/components/GradientView';
+import { Colors, Gradients } from '@/constants/Colors';
 
 type WordChainProps = {
   solvedWords: string[];
-  onWordPress?: (word: string, index: number) => void;
 };
 
-export default function WordChain({ solvedWords, onWordPress }: WordChainProps) {
-  const theme = useTheme();
-  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+// Phase 02 replaces this with the chain track (D1).
+export default function WordChain({ solvedWords }: WordChainProps) {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  React.useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 500,
-      useNativeDriver: true,
-    }).start();
-  }, []);
+  useEffect(() => {
+    Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
+  }, [fadeAnim]);
 
-  if (solvedWords.length === 0) {
-    return null;
-  }
+  if (solvedWords.length === 0) return null;
 
   return (
-    <Surface style={styles.container} elevation={0}>
-      <Animated.View 
-        style={[
-          styles.wordsContainer,
-          { opacity: fadeAnim }
-        ]}
-      >
+    <View
+      style={styles.container}
+      accessible
+      accessibilityLabel={`Solved ${solvedWords.length} of 5: ${solvedWords.join(', ')}`}
+    >
+      <Animated.View style={[styles.wordsContainer, { opacity: fadeAnim }]}>
         {solvedWords.map((word, index) => (
           <View key={`${word}-${index}`} style={styles.wordContainer}>
-            <Surface style={styles.wordBadge} elevation={2}>
-              <TouchableRipple
-                onPress={() => onWordPress?.(word, index)}
-                rippleColor={theme.colors.onSecondaryContainer}
-                style={styles.touchable}
-              >
-                <GradientView
-                  colors={Gradients.secondary}
-                  style={styles.gradientContent}
-                >
-                  <Check size={18} color={Colors.textOnPrimary} />
-                </GradientView>
-              </TouchableRipple>
-            </Surface>
+            <View style={styles.wordBadge}>
+              <GradientView colors={Gradients.secondary} style={styles.gradientContent}>
+                <Check size={18} color={Colors.textOnPrimary} />
+              </GradientView>
+            </View>
             {index < solvedWords.length - 1 && (
               <View style={styles.arrow}>
-                <MaterialCommunityIcons 
-                  name="arrow-right" 
-                  size={24} 
-                  color={Colors.textOnPrimary}
-                  style={styles.arrowIcon}
-                />
+                <MaterialCommunityIcons name="arrow-right" size={24} color={Colors.textOnPrimary} />
               </View>
             )}
           </View>
         ))}
       </Animated.View>
-    </Surface>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 0,
     paddingHorizontal: 12,
     marginBottom: 10,
-    backgroundColor: 'transparent',
-  },
-  title: {
-    fontFamily: 'Play-Bold',
-    color: Colors.textOnPrimary,
-    marginBottom: 6,
-    paddingHorizontal: 4,
   },
   wordsContainer: {
-    marginTop: 0,
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
@@ -97,25 +65,15 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginVertical: 2,
   },
-  touchable: {
-    borderRadius: 10,
-  },
   gradientContent: {
     paddingVertical: 4,
     paddingHorizontal: 6,
-  },
-  word: {
-    color: Colors.textOnPrimary,
-    fontSize: 14,
-    fontWeight: '600',
   },
   arrow: {
     paddingHorizontal: 1,
     marginLeft: 4,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  arrowIcon: {
     opacity: 0.9,
   },
 });

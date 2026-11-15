@@ -1,231 +1,194 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  View,
-  StyleSheet,
-  Text,
-  Animated,
-  Platform,
-  StatusBar,
-} from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Platform, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GradientView } from '@/components/GradientView';
 import ClueDisplay from './ClueDisplay';
 import AnswerInput, { AnswerInputHandle } from './AnswerInput';
 import WordChain from './WordChain';
 import GameControls from './GameControls';
-import { useGameState, useGameDispatch } from '@/context/GameContext';
+import { useChains, useGameDispatch, useGameState } from '@/context/GameContext';
+import { canHint, chainResult, chainScore, currentChain, isChainComplete } from '@/lib/game';
 import { Colors, Gradients } from '@/constants/Colors';
 
 export default function GameScreen() {
-  const {
-    currentChain,
-    currentClueIndex,
-    hintLevel,
-    solvedWords,
-    isChainCompleted,
-    currentPoints,
-  } = useGameState();
+  const state = useGameState();
+  const chains = useChains();
   const dispatch = useGameDispatch();
+  const { linkIndex, links, lastOutcome } = state;
+  const chain = currentChain(chains, state);
+  const complete = isChainComplete(state);
+
   const [userAnswer, setUserAnswer] = useState('');
-  const [showError, setShowError] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  // While the "correct" transition plays, keep showing the link that was just solved.
+  const [frozenIndex, setFrozenIndex] = useState<number | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
   const answerInputRef = useRef<AnswerInputHandle>(null);
 
-  // Reset animations when chain changes
+  const shownIndex = frozenIndex ?? linkIndex;
+  const showComplete = complete && frozenIndex === null;
+
   useEffect(() => {
     fadeAnim.setValue(1);
     slideAnim.setValue(0);
-  }, [currentChain.id]);
+  }, [chain?.id, fadeAnim, slideAnim]);
 
-  // Focus input when a new word is revealed
   useEffect(() => {
-    if (!isChainCompleted && !isAnimating && Platform.OS !== 'ios') {
-      const focusTimeout = setTimeout(() => {
-        answerInputRef.current?.focus();
-      }, 100); // Small delay to ensure animations are complete
-      return () => clearTimeout(focusTimeout);
+    if (!complete && !isAnimating && Platform.OS !== 'ios') {
+      const t = setTimeout(() => answerInputRef.current?.focus(), 100);
+      return () => clearTimeout(t);
     }
-  }, [currentClueIndex, isChainCompleted, isAnimating]);
+  }, [linkIndex, complete, isAnimating]);
 
   const animateTransition = (callback: () => void) => {
     setIsAnimating(true);
-
     Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: -50,
-        duration: 300,
-        useNativeDriver: true,
-      }),
+      Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: -50, duration: 300, useNativeDriver: true }),
     ]).start(() => {
       callback();
-
-      // Reset animation values
       fadeAnim.setValue(0);
       slideAnim.setValue(50);
-
-      // Animate in the new content
       Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        setIsAnimating(false);
-      });
+        Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.timing(slideAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+      ]).start(() => setIsAnimating(false));
     });
   };
 
-  const handleSubmit = () => {
-    if (userAnswer.trim() === '' || isAnimating) return;
-
-    const correctAnswer = currentChain.answers[currentClueIndex].toLowerCase();
-    if (userAnswer.trim().toLowerCase() === correctAnswer) {
-      setShowSuccess(true);
-      setShowError(false);
-
+  // React to the reducer's verdict on the last guess.
+  useEffect(() => {
+    if (lastOutcome === 'correct') {
       animateTransition(() => {
-        dispatch({ type: 'CHECK_ANSWER', payload: userAnswer });
+        setFrozenIndex(null);
         setUserAnswer('');
-        setShowSuccess(false);
+        dispatch({ type: 'CLEAR_FEEDBACK' });
       });
     } else {
-      setShowError(true);
-      setShowSuccess(false);
+      setFrozenIndex(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastOutcome]);
+
+  const resetInput = () => {
+    setUserAnswer('');
+    setFrozenIndex(null);
   };
 
-  const handleShowHint = () => {
-    if (!isAnimating) {
-      dispatch({ type: 'SHOW_HINT' });
-    }
+  const handleChangeText = (text: string) => {
+    setUserAnswer(text);
+    if (lastOutcome === 'wrong' || lastOutcome === 'near') dispatch({ type: 'CLEAR_FEEDBACK' });
   };
 
-  const handleRestartChain = () => {
-    if (!isAnimating) {
-      dispatch({ type: 'RESTART_CHAIN' });
-      setUserAnswer('');
-      setShowError(false);
-      setShowSuccess(false);
-    }
+  const handleSubmit = () => {
+    // Feedback must be cleared (by typing) before the same text is judged again.
+    if (userAnswer.trim() === '' || isAnimating || lastOutcome !== null) return;
+    setFrozenIndex(linkIndex);
+    dispatch({ type: 'SUBMIT_GUESS', guess: userAnswer });
   };
 
+  const handleHint = () => {
+    if (!isAnimating) dispatch({ type: 'HINT' });
+  };
+  const handleReveal = () => {
+    if (isAnimating) return;
+    resetInput();
+    dispatch({ type: 'REVEAL' });
+  };
+  const handleRestart = () => {
+    if (isAnimating) return;
+    resetInput();
+    dispatch({ type: 'RESTART' });
+  };
   const handleNextChain = () => {
-    if (!isAnimating) {
-      dispatch({ type: 'LOAD_NEXT_CHAIN' });
-      setUserAnswer('');
-      setShowError(false);
-      setShowSuccess(false);
-    }
+    if (isAnimating) return;
+    resetInput();
+    dispatch({ type: 'NEXT_CHAIN' });
+  };
+  const handlePlayFromStart = () => {
+    resetInput();
+    if (chains[0]) dispatch({ type: 'REPLAY_CHAIN', id: chains[0].id });
   };
 
-  const getCurrentHint = () => {
-    if (hintLevel > 0 && currentClueIndex < currentChain.answers.length) {
-      return currentChain.answers[currentClueIndex][0].toUpperCase();
-    }
-    return null;
-  };
+  const solvedWords = chain ? chain.links.filter((_, i) => links[i]?.solved).map((l) => l.answer) : [];
+  const result = chainResult(state);
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
-        <Text style={styles.title}>ClueChain</Text>
+        <Text style={styles.title}>Clue Chains</Text>
         <View style={styles.pointsWrapper}>
-          <GradientView
-            colors={Gradients.accent}
-            style={styles.pointsContainer}
-          >
-            <Text style={styles.points}>Points: {currentPoints}</Text>
+          <GradientView colors={Gradients.accent} style={styles.pointsContainer}>
+            <Text style={styles.points}>Points: {chainScore(links)}</Text>
           </GradientView>
         </View>
       </View>
 
-
       <View style={styles.mainContent}>
-        <Animated.View
-          style={[
-            styles.clueContainer,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
-          <WordChain solvedWords={solvedWords} />
-          {!isChainCompleted ? (
-            <GradientView
-              colors={[Colors.surface, Colors.surfaceHighlight]}
-              style={styles.contentCard}
+        {!chain ? (
+          <GradientView colors={[Colors.surface, Colors.surfaceSecondary]} style={styles.contentCard}>
+            <Text style={styles.completionTitle}>All chains complete!</Text>
+            <Text style={styles.completionMessage}>You've finished every chain. More are on the way.</Text>
+            <TouchableOpacity
+              style={styles.replayButton}
+              onPress={handlePlayFromStart}
+              accessibilityRole="button"
+              accessibilityLabel="Play the first chain again"
             >
-              <ClueDisplay
-                clue={
-                  currentClueIndex < currentChain.clues.length
-                    ? currentChain.clues[currentClueIndex]
-                    : ''
-                }
-                answer={
-                  currentClueIndex < currentChain.answers.length
-                    ? currentChain.answers[currentClueIndex]
-                    : undefined
-                }
-                hintLevel={hintLevel}
-              />
-
-              <AnswerInput
-                ref={answerInputRef}
-                value={userAnswer}
-                onChangeText={setUserAnswer}
-                onSubmit={handleSubmit}
-                showError={showError}
-                showSuccess={showSuccess}
-              />
-              <GameControls
-                onHint={handleShowHint}
-                onRestart={handleRestartChain}
-                onNextChain={handleNextChain}
-                hintDisabled={hintLevel >= 3 || isChainCompleted}
-                isCompleted={isChainCompleted}
-              />
-            </GradientView>
-          ) : (
-            <GradientView
-              colors={[Colors.surface, Colors.surfaceSecondary]}
-              style={styles.contentCard}
-            >
-              <Text style={styles.completionTitle}>Chain Complete!</Text>
-              <Text style={styles.completionMessage}>
-                You've successfully completed the word chain!
-              </Text>
-              <Text style={styles.completionPoints}>
-                Points earned: {currentPoints}
-              </Text>
-              <GameControls
-                onHint={handleShowHint}
-                onRestart={handleRestartChain}
-                onNextChain={handleNextChain}
-                hintDisabled={true}
-                isCompleted={true}
-              />
-            </GradientView>
-          )}
-        </Animated.View>
+              <Text style={styles.replayButtonText}>Play again from the start</Text>
+            </TouchableOpacity>
+          </GradientView>
+        ) : (
+          <Animated.View
+            style={[styles.clueContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
+          >
+            <WordChain solvedWords={solvedWords} />
+            {!showComplete ? (
+              <GradientView colors={[Colors.surface, Colors.surfaceHighlight]} style={styles.contentCard}>
+                <ClueDisplay link={chain.links[shownIndex]} hintLetters={links[shownIndex].hintLetters} />
+                <AnswerInput
+                  ref={answerInputRef}
+                  value={userAnswer}
+                  onChangeText={handleChangeText}
+                  onSubmit={handleSubmit}
+                  outcome={lastOutcome}
+                />
+                <GameControls
+                  onHint={handleHint}
+                  onReveal={handleReveal}
+                  onRestart={handleRestart}
+                  onNextChain={handleNextChain}
+                  hintAvailable={canHint(chains, state)}
+                  isCompleted={false}
+                />
+              </GradientView>
+            ) : (
+              <GradientView colors={[Colors.surface, Colors.surfaceSecondary]} style={styles.contentCard}>
+                <Text style={styles.completionTitle}>Chain Complete!</Text>
+                <Text style={styles.completionMessage}>{chain.title}</Text>
+                {result && (
+                  <Text
+                    style={styles.completionPoints}
+                    accessibilityLabel={`${result.stars} of 3 stars. ${result.score} points.`}
+                  >
+                    {'★'.repeat(result.stars) + '☆'.repeat(3 - result.stars)} Points earned: {result.score}
+                  </Text>
+                )}
+                <GameControls
+                  onHint={handleHint}
+                  onReveal={handleReveal}
+                  onRestart={handleRestart}
+                  onNextChain={handleNextChain}
+                  hintAvailable={false}
+                  isCompleted
+                />
+              </GradientView>
+            )}
+          </Animated.View>
+        )}
       </View>
-
-      <View style={styles.footer}></View>
     </View>
   );
 }
@@ -234,7 +197,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'transparent',
-    padding: 0,
     paddingBottom: Platform.OS === 'ios' ? 100 : 80,
   },
   header: {
@@ -250,7 +212,6 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontFamily: 'Play-Bold',
     padding: 12,
-    fontWeight: '600',
     color: Colors.textOnPrimary,
   },
   pointsWrapper: {
@@ -276,8 +237,7 @@ const styles = StyleSheet.create({
   },
   mainContent: {
     flex: 1,
-    paddingLeft: 14,
-    paddingRight: 14,
+    paddingHorizontal: 14,
     justifyContent: 'flex-start',
   },
   clueContainer: {
@@ -293,20 +253,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
   },
-  completionCard: {
-    width: '100%',
-    padding: 14,
-    borderRadius: 16,
-    alignItems: 'center',
-    elevation: 4,
-    shadowColor: Colors.cardShadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-  },
   completionTitle: {
     fontSize: 28,
-    fontWeight: '700',
     fontFamily: 'Play-Bold',
     color: Colors.secondary,
     marginBottom: 10,
@@ -315,7 +263,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: Colors.primary,
-    textAlign: 'left',
     marginBottom: 10,
   },
   completionPoints: {
@@ -323,7 +270,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.textSecondary,
   },
-  footer: {
-    marginTop: 12,
+  replayButton: {
+    minHeight: 44,
+    marginVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    backgroundColor: Colors.secondaryDark,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  replayButtonText: {
+    color: Colors.textOnPrimary,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

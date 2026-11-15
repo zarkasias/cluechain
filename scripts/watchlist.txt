@@ -1,0 +1,19 @@
+# Words that trigger a family-friendliness review (warning only, not a block).
+# One word per line, case-insensitive, matched as whole words. Lines starting with # are ignored.
+beer
+wine
+drunk
+gun
+kill
+dead
+bomb
+drug
+cigarette
+gamble
+casino
+hell
+damn
+sexy
+weapon
+murder
+poison

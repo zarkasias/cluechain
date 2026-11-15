@@ -1,14 +1,13 @@
-import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { Colors } from '@/constants/Colors';
+import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import GameScreen from '@/components/GameScreen';
+import { Colors } from '@/constants/Colors';
+import { usePlayTimer } from '@/context/GameContext';
 
 export default function HomeScreen() {
+  usePlayTimer();
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.primary }}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
-      >
+    <View style={styles.root}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
         <GameScreen />
       </KeyboardAvoidingView>
     </View>
@@ -16,6 +15,10 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: Colors.primary,
+  },
   container: {
     flex: 1,
   },

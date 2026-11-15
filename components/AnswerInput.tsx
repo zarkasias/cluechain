@@ -1,38 +1,31 @@
-import React, { useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet, Animated } from 'react-native';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import { Animated, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { ArrowRight as ArrowRightIcon } from 'lucide-react-native';
 import { GradientView } from '@/components/GradientView';
+import type { Outcome } from '@/lib/game';
 import { Colors, Gradients } from '@/constants/Colors';
 
 type AnswerInputProps = {
   value: string;
   onChangeText: (text: string) => void;
   onSubmit: () => void;
-  showError: boolean;
-  showSuccess: boolean;
+  /** The reducer's verdict on the last guess, or null. */
+  outcome: Outcome | null;
 };
 
 export type AnswerInputHandle = {
   focus: () => void;
 };
 
-const AnswerInput = forwardRef<AnswerInputHandle, AnswerInputProps>(({
-  value,
-  onChangeText,
-  onSubmit,
-  showError,
-  showSuccess,
-}, ref) => {
+const AnswerInput = forwardRef<AnswerInputHandle, AnswerInputProps>(({ value, onChangeText, onSubmit, outcome }, ref) => {
   const inputRef = useRef<TextInput>(null);
   const shakeAnim = useRef(new Animated.Value(0)).current;
-  
+  const showError = outcome === 'wrong' || outcome === 'near';
+
   useImperativeHandle(ref, () => ({
-    focus: () => {
-      inputRef.current?.focus();
-    }
+    focus: () => inputRef.current?.focus(),
   }));
-  
-  // Apply shake animation when error is shown
+
   useEffect(() => {
     if (showError) {
       Animated.sequence([
@@ -40,28 +33,23 @@ const AnswerInput = forwardRef<AnswerInputHandle, AnswerInputProps>(({
         Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
         Animated.timing(shakeAnim, { toValue: 10, duration: 50, useNativeDriver: true }),
         Animated.timing(shakeAnim, { toValue: -10, duration: 50, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true })
+        Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
       ]).start();
     }
   }, [showError, shakeAnim]);
-  
-  // Handle enter key press
-  const handleKeyPress = ({ nativeEvent }: { nativeEvent: { key: string } }) => {
-    if (nativeEvent.key === 'Enter') {
-      onSubmit();
-    }
-  };
-  
+
+  const canSubmit = value.trim() !== '';
+
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Your Answer:</Text>
-      
+
       <Animated.View
         style={[
           styles.inputContainer,
           showError && styles.inputError,
-          showSuccess && styles.inputSuccess,
-          { transform: [{ translateX: shakeAnim }] }
+          outcome === 'correct' && styles.inputSuccess,
+          { transform: [{ translateX: shakeAnim }] },
         ]}
       >
         <TextInput
@@ -70,38 +58,41 @@ const AnswerInput = forwardRef<AnswerInputHandle, AnswerInputProps>(({
           value={value}
           onChangeText={onChangeText}
           onSubmitEditing={onSubmit}
-          onKeyPress={handleKeyPress}
           placeholder="Type your answer..."
           placeholderTextColor={Colors.textLight}
           autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="go"
-          autoFocus={false}
+          accessibilityLabel="Your answer"
         />
-        
+
         <TouchableOpacity
-          style={[
-            styles.submitButtonContainer,
-            !value.trim() && styles.submitButtonDisabled
-          ]}
+          style={[styles.submitButtonContainer, !canSubmit && styles.submitButtonDisabled]}
           onPress={onSubmit}
-          disabled={!value.trim()}
+          disabled={!canSubmit}
+          accessibilityRole="button"
+          accessibilityLabel="Submit answer"
+          accessibilityState={{ disabled: !canSubmit }}
         >
           <GradientView
-            colors={value.trim() ? Gradients.primary : [Colors.buttonDisabled, Colors.buttonDisabled]}
+            colors={canSubmit ? Gradients.primary : [Colors.buttonDisabled, Colors.buttonDisabled]}
             style={styles.submitButton}
           >
             <ArrowRightIcon color={Colors.textOnPrimary} size={20} />
           </GradientView>
         </TouchableOpacity>
       </Animated.View>
-      
+
       {showError && (
-        <Text style={styles.errorText}>Incorrect. Try again!</Text>
+        <Text style={styles.errorText} accessibilityLiveRegion="polite">
+          {outcome === 'near' ? 'So close! Check your spelling.' : 'Incorrect. Try again!'}
+        </Text>
       )}
     </View>
   );
 });
+
+AnswerInput.displayName = 'AnswerInput';
 
 const styles = StyleSheet.create({
   container: {
@@ -136,6 +127,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    minWidth: 0, // B6: let the input shrink so the submit button isn't clipped
     height: 46,
     paddingHorizontal: 16,
     fontSize: 18,
@@ -144,6 +136,7 @@ const styles = StyleSheet.create({
   submitButtonContainer: {
     height: 46,
     width: 46,
+    flexShrink: 0, // B6
   },
   submitButton: {
     flex: 1,

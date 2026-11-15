@@ -1,16 +1,39 @@
-import { useEffect, useState } from 'react';
-import * as Font from 'expo-font';
-import { Platform } from 'react-native';
+import { useEffect } from 'react';
+import { Platform, View } from 'react-native';
+import { useFonts } from 'expo-font';
 import { Slot } from 'expo-router';
-import { GameProvider } from '@/context/GameContext';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { View } from 'react-native';
+import { GameProvider, useGameState } from '@/context/GameContext';
 import { Colors } from '@/constants/Colors';
 
 import './styles/global.css';
 
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
+function AppShell({ fontsLoaded }: { fontsLoaded: boolean }) {
+  const { hydrated } = useGameState();
+  const ready = fontsLoaded && hydrated;
+
+  useEffect(() => {
+    if (ready) SplashScreen.hideAsync().catch(() => {});
+  }, [ready]);
+
+  if (!ready) return null;
+
+  return (
+    <View style={{ flex: 1, backgroundColor: Colors.primary }}>
+      <StatusBar style="light" translucent backgroundColor="transparent" />
+      <Slot />
+    </View>
+  );
+}
+
 export default function RootLayout() {
-  const [fontsLoaded, setFontsLoaded] = useState(false);
+  const [fontsLoaded, fontError] = useFonts({
+    'Play-Regular': require('../assets/fonts/Play-Regular.ttf'),
+    'Play-Bold': require('../assets/fonts/Play-Bold.ttf'),
+  });
 
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -19,21 +42,9 @@ export default function RootLayout() {
     }
   }, []);
 
-  useEffect(() => {
-    Font.loadAsync({
-      'Play-Regular': require('../assets/fonts/Play-Regular.ttf'),
-      'Play-Bold': require('../assets/fonts/Play-Bold.ttf'),
-    }).then(() => setFontsLoaded(true));
-  }, []);
-
-  if (!fontsLoaded) return null;
-
   return (
     <GameProvider>
-      <View style={{ flex: 1, backgroundColor: Colors.primary }}>
-        <StatusBar style="light" translucent backgroundColor="transparent" />
-        <Slot />
-      </View>
+      <AppShell fontsLoaded={fontsLoaded || !!fontError} />
     </GameProvider>
   );
 }

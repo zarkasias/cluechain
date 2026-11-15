@@ -1,8 +1,7 @@
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useGameState } from '@/context/GameContext';
 import { Ionicons } from '@expo/vector-icons';
 import { Platform } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '@/constants/Colors';
 
 type StatItemProps = {
@@ -23,16 +22,13 @@ const StatItem = ({ value, label, icon }: StatItemProps) => (
   </View>
 );
 
+function formatTime(ms: number): string {
+  const totalSeconds = Math.round(ms / 1000);
+  return `${Math.floor(totalSeconds / 60)}:${(totalSeconds % 60).toString().padStart(2, '0')}`;
+}
+
 export default function StatsScreen() {
   const { stats } = useGameState();
-
-  if (!stats) {
-    return (
-      <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color="#6366f1" />
-      </View>
-    );
-  }
 
   return (
    
@@ -62,15 +58,13 @@ export default function StatsScreen() {
             icon="bulb"
           />
           <StatItem 
-            value={stats.wordsGuessed}
-            label="Words Guessed"
+            value={stats.wordsSolved}
+            label="Words Solved"
             icon="text"
           />
           <StatItem 
             value={
-              stats.bestTime 
-                ? `${Math.floor(stats.bestTime / 60)}:${(stats.bestTime % 60).toString().padStart(2, '0')}`
-                : '--'
+              stats.bestTimeMs !== null ? formatTime(stats.bestTimeMs) : '--'
             }
             label="Best Time"
             icon="timer"
@@ -82,16 +76,6 @@ export default function StatsScreen() {
 }
 
 const styles = StyleSheet.create({
-  gradient: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-  },
-  centered: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   contentContainer: {
     padding: 20,
     paddingBottom: Platform.OS === 'ios' ? 100 : 80,
@@ -107,10 +91,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontFamily: 'Play-Bold',
     marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: '#999',
   },
   statsContainer: {
     marginTop: 12,
