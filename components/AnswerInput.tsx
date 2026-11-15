@@ -18,7 +18,7 @@ export type AnswerInputHandle = {
 };
 
 const AnswerInput = forwardRef<AnswerInputHandle, AnswerInputProps>(({ value, onChangeText, onSubmit, outcome }, ref) => {
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<React.ComponentRef<typeof TextInput>>(null);
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const showError = outcome === 'wrong' || outcome === 'near';
 

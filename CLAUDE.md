@@ -1,6 +1,6 @@
 # Clue Chains — project guide for Claude
 
-Clue Chains is a word-puzzle game built with Expo (SDK 54), React Native 0.81, expo-router and TypeScript.
+Clue Chains is a word-puzzle game built with Expo (SDK 58), React Native 0.88, expo-router and TypeScript.
 
 **The game in one sentence:** the player gets a clue, guesses the answer, and that answer becomes part of the next clue. A chain has exactly 5 links.
 

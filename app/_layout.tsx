@@ -23,7 +23,7 @@ function AppShell({ fontsLoaded }: { fontsLoaded: boolean }) {
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.primary }}>
-      <StatusBar style="light" translucent backgroundColor="transparent" />
+      <StatusBar style="light" />
       <Slot />
     </View>
   );

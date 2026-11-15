@@ -1,9 +1,9 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Platform, View } from 'react-native';
+import { ColorValue, Platform, View } from 'react-native';
 import { Colors } from '@/constants/Colors';
 
-const TabBarIcon = ({ name, color, focused }: { name: keyof typeof Ionicons.glyphMap; color: string; focused: boolean }) => (
+const TabBarIcon = ({ name, color, focused }: { name: keyof typeof Ionicons.glyphMap; color: ColorValue; focused: boolean }) => (
   <View style={{
     alignItems: 'center',
     justifyContent: 'center',
@@ -14,7 +14,7 @@ const TabBarIcon = ({ name, color, focused }: { name: keyof typeof Ionicons.glyp
     <Ionicons 
       name={name}
       size={Platform.OS === 'ios' ? 22 : 32} 
-      color={focused ? Colors.secondary : color}
+      color={focused ? Colors.secondary : typeof color === 'string' ? color : Colors.surfaceHighlight}
     />
   </View>
 );
