@@ -12,6 +12,7 @@ const result: ChainResult = {
   wrongGuesses: 0,
   wordsRevealed: 0,
   wordsSolved: 5,
+  links: [],
 };
 
 describe('previousDayISO', () => {

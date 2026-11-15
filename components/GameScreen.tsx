@@ -12,6 +12,7 @@ import {
   currentChain,
   HINT_LETTER_PENALTY,
   isChainComplete,
+  isReplay,
   LINKS_PER_CHAIN,
 } from '@/lib/game';
 import type { LinkState } from '@/lib/game';
@@ -25,7 +26,7 @@ import AnswerInput, { AnswerInputHandle, InputTone } from './play/AnswerInput';
 import FeedbackLine, { Feedback } from './play/FeedbackLine';
 import ActionBar from './play/ActionBar';
 import ConfirmSheet from './play/ConfirmSheet';
-import CompletionCard from './play/CompletionCard';
+import RecapView from './recap/RecapView';
 import CarryOverLayer, { FLIGHT_MS, Ghost } from './play/CarryOverLayer';
 
 /**
@@ -296,77 +297,84 @@ export default function GameScreen() {
   const untouched = linkIndex === 0 && links[0].hintLetters === 0 && links[0].wrongGuesses === 0 && !links[0].solved;
   const result = chainResult(state);
 
+  if (!chain) {
+    return <RecapView kind="all" onReplayFirst={replay} />;
+  }
+
+  if (showCompletion && result && state.completion) {
+    return (
+      <Animated.View style={[styles.grow, contentStyle]}>
+        <RecapView
+          kind="chain"
+          chain={chain}
+          chainNumber={chains.indexOf(chain) + 1}
+          result={result}
+          completion={state.completion}
+          onNext={goNext}
+          onReplay={replay}
+        />
+      </Animated.View>
+    );
+  }
+
   return (
     <View ref={rootRef} style={[styles.root, { paddingTop: insets.top + space.sm }]} onLayout={onLayout}>
-      <View style={[styles.column, { gap }]}>
-        {!chain ? (
-          <CompletionCard kind="all" onPlayFirst={replay} />
-        ) : (
-          <>
-            <PlayHeader
-              chainNumber={chains.indexOf(chain) + 1}
-              totalChains={chains.length}
-              difficulty={chain.difficulty}
-              title={chain.title}
-              score={chainScore(presentLinks)}
+      <Animated.View style={[styles.column, { gap }, contentStyle]}>
+        <PlayHeader
+          chainNumber={chains.indexOf(chain) + 1}
+          totalChains={chains.length}
+          difficulty={chain.difficulty}
+          title={chain.title}
+          score={chainScore(presentLinks)}
+          replay={isReplay(state)}
+          compact={compact}
+        />
+        <ChainTrack ref={trackRef} chain={chain} links={presentLinks} currentIndex={trackCurrent} />
+
+        <View style={[styles.grow, { gap }]}>
+          <Animated.View style={[cardStyle, tall ? (wide ? styles.cardTall : [styles.cardTall, styles.cardGrow]) : null]}>
+            <ClueCard
+              key={`${chain.id}-${shownIndex}`}
+              link={chain.links[shownIndex]}
+              linkIndex={shownIndex}
               compact={compact}
+              style={tall ? styles.grow : null}
+            >
+              <LetterTiles
+                ref={tilesRef}
+                link={chain.links[shownIndex]}
+                hintLetters={links[shownIndex].hintLetters}
+                fill={transition && !transition.swapped ? transition.mode : null}
+                maxSize={compact ? 36 : 44}
+              />
+            </ClueCard>
+          </Animated.View>
+
+          <View style={wide ? null : styles.spacer} />
+
+          <View style={[styles.bottom, { gap: compact ? space.xs : space.sm }]}>
+            <FeedbackLine feedback={feedback} />
+            <AnswerInput
+              ref={inputRef}
+              value={answer}
+              onChangeText={handleChangeText}
+              onSubmit={handleSubmit}
+              tone={tone}
+              shakeKey={shakeKey}
+              disabled={busy}
             />
-            <ChainTrack ref={trackRef} chain={chain} links={presentLinks} currentIndex={trackCurrent} />
-
-            <Animated.View style={[contentStyle, showCompletion ? null : styles.grow]}>
-              {showCompletion && result ? (
-                <CompletionCard kind="chain" title={chain.title} result={result} onNext={goNext} onReplay={replay} />
-              ) : (
-                <View style={[styles.grow, { gap }]}>
-                  <Animated.View
-                    style={[cardStyle, tall ? (wide ? styles.cardTall : [styles.cardTall, styles.cardGrow]) : null]}
-                  >
-                    <ClueCard
-                      key={`${chain.id}-${shownIndex}`}
-                      link={chain.links[shownIndex]}
-                      linkIndex={shownIndex}
-                      compact={compact}
-                      style={tall ? styles.grow : null}
-                    >
-                      <LetterTiles
-                        ref={tilesRef}
-                        link={chain.links[shownIndex]}
-                        hintLetters={links[shownIndex].hintLetters}
-                        fill={transition && !transition.swapped ? transition.mode : null}
-                        maxSize={compact ? 36 : 44}
-                      />
-                    </ClueCard>
-                  </Animated.View>
-
-                  <View style={wide ? null : styles.spacer} />
-
-                  <View style={[styles.bottom, { gap: compact ? space.xs : space.sm }]}>
-                    <FeedbackLine feedback={feedback} />
-                    <AnswerInput
-                      ref={inputRef}
-                      value={answer}
-                      onChangeText={handleChangeText}
-                      onSubmit={handleSubmit}
-                      tone={tone}
-                      shakeKey={shakeKey}
-                      disabled={busy}
-                    />
-                    <ActionBar
-                      hintCost={HINT_LETTER_PENALTY}
-                      canHint={canHint(chains, state)}
-                      showRestart={!untouched}
-                      disabled={busy}
-                      onHint={handleHint}
-                      onReveal={() => setSheet('reveal')}
-                      onRestart={() => setSheet('restart')}
-                    />
-                  </View>
-                </View>
-              )}
-            </Animated.View>
-          </>
-        )}
-      </View>
+            <ActionBar
+              hintCost={HINT_LETTER_PENALTY}
+              canHint={canHint(chains, state)}
+              showRestart={!untouched}
+              disabled={busy}
+              onHint={handleHint}
+              onReveal={() => setSheet('reveal')}
+              onRestart={() => setSheet('restart')}
+            />
+          </View>
+        </View>
+      </Animated.View>
 
       <ConfirmSheet
         visible={sheet === 'reveal'}

@@ -60,11 +60,28 @@ export type Settings = {
   reduceMotion: boolean | null;
 };
 
+/**
+ * What a completion meant, worked out when the last link is solved (before
+ * `history` and `stats` are updated, so the recap can compare against them).
+ */
+export type Completion = {
+  /** True the first time this chain is completed; false for a replay. */
+  first: boolean;
+  /** First completion with 3 stars. */
+  perfect: boolean;
+  /** First completion that beat the previous overall best time (`stats.bestTimeMs`). */
+  newBestTime: boolean;
+  /** Replay only: the chain's history entry before this run. */
+  previous: HistoryEntry | null;
+};
+
 export type Progress = {
   chainId: string;
   linkIndex: number;
   links: LinkState[];
   elapsedMs: number;
+  /** Present once the chain is complete, so the recap survives an app restart. */
+  completion?: Completion | null;
 };
 
 export type SaveV2 = {
@@ -85,6 +102,8 @@ export type ChainResult = {
   wrongGuesses: number;
   wordsRevealed: number;
   wordsSolved: number;
+  /** Per-link outcomes, in order. */
+  links: LinkState[];
 };
 
 export type GameState = {
@@ -95,6 +114,8 @@ export type GameState = {
   links: LinkState[];
   elapsedMs: number;
   lastOutcome: Outcome | null;
+  /** Set when the current chain is complete; `null` otherwise. */
+  completion: Completion | null;
   history: History;
   stats: Stats;
   settings: Settings;

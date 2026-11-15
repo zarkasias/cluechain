@@ -17,6 +17,8 @@ type PlayHeaderProps = {
   title: string;
   /** The running score for this chain. */
   score: number;
+  /** Show the small "Replay" tag: this chain was already completed. */
+  replay?: boolean;
   /** Hide the title line when vertical space is tight (keyboard open on small phones). */
   compact?: boolean;
 };
@@ -53,7 +55,7 @@ function useCountUp(target: number, duration: number, animate: boolean) {
   return shown;
 }
 
-export default function PlayHeader({ chainNumber, totalChains, difficulty, title, score, compact }: PlayHeaderProps) {
+export default function PlayHeader({ chainNumber, totalChains, difficulty, title, score, replay, compact }: PlayHeaderProps) {
   const reduceMotion = useReduceMotion();
   const shown = useCountUp(score, motion.slow, !reduceMotion);
 
@@ -82,9 +84,25 @@ export default function PlayHeader({ chainNumber, totalChains, difficulty, title
   return (
     <View style={styles.row}>
       <View style={styles.left}>
-        <Text style={styles.meta} accessibilityRole="header" numberOfLines={1}>
-          Chain {chainNumber} of {totalChains} · {DIFFICULTY_LABEL[difficulty]}
-        </Text>
+        <View style={styles.metaRow}>
+          <Text
+            style={styles.meta}
+            accessibilityRole="header"
+            accessibilityLabel={`Chain ${chainNumber} of ${totalChains}, ${DIFFICULTY_LABEL[difficulty]}${
+              replay ? ". Replay: this run won't change your stats" : ''
+            }`}
+            numberOfLines={1}
+          >
+            Chain {chainNumber} of {totalChains} · {DIFFICULTY_LABEL[difficulty]}
+          </Text>
+          {replay && (
+            <View style={styles.tag} importantForAccessibility="no-hide-descendants" aria-hidden>
+              <Text style={styles.tagText} maxFontSizeMultiplier={1.3}>
+                Replay
+              </Text>
+            </View>
+          )}
+        </View>
         {!compact && (
           <Text style={styles.title} numberOfLines={1}>
             {title}
@@ -118,8 +136,26 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+  },
   meta: {
     ...type.label,
+    color: color.inkMuted,
+    flexShrink: 1,
+  },
+  tag: {
+    paddingHorizontal: space.sm,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: color.inkMuted,
+  },
+  tagText: {
+    ...type.label,
+    fontSize: 11,
+    lineHeight: 16,
     color: color.inkMuted,
   },
   title: {

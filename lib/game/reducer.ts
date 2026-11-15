@@ -1,7 +1,7 @@
 import { isCorrect, isNearMiss, maxHintLetters, normalize } from './answers';
 import { chainScore, linkValue, newLinkState, stars } from './scoring';
 import { applyFirstCompletion, emptyStats, localDayISO } from './stats';
-import type { Chain, ChainResult, GameAction, GameState, LinkState, SaveV2, Settings } from './types';
+import type { Chain, ChainResult, Completion, GameAction, GameState, LinkState, SaveV2, Settings } from './types';
 
 export const LINKS_PER_CHAIN = 5;
 
@@ -25,6 +25,7 @@ export function createInitialState(chains: Chain[]): GameState {
     links: freshLinks(),
     elapsedMs: 0,
     lastOutcome: null,
+    completion: null,
     history: {},
     stats: emptyStats(),
     settings: defaultSettings(),
@@ -54,7 +55,18 @@ export function chainResult(state: GameState): ChainResult | null {
     wrongGuesses: links.reduce((n, l) => n + l.wrongGuesses, 0),
     wordsRevealed: links.filter((l) => l.revealed).length,
     wordsSolved: links.filter((l) => l.solved && !l.revealed).length,
+    links,
   };
+}
+
+/**
+ * True while playing (or looking at the recap of) a chain that was already
+ * completed before this run started.
+ */
+export function isReplay(state: GameState): boolean {
+  if (state.chainId === null) return false;
+  if (state.completion) return !state.completion.first;
+  return state.history[state.chainId] !== undefined;
 }
 
 export function canHint(chains: Chain[], state: GameState): boolean {
@@ -70,7 +82,13 @@ export function toSave(state: GameState): SaveV2 {
     progress:
       state.chainId === null
         ? null
-        : { chainId: state.chainId, linkIndex: state.linkIndex, links: state.links, elapsedMs: state.elapsedMs },
+        : {
+            chainId: state.chainId,
+            linkIndex: state.linkIndex,
+            links: state.links,
+            elapsedMs: state.elapsedMs,
+            completion: state.completion,
+          },
     history: state.history,
     stats: state.stats,
     settings: state.settings,
@@ -80,7 +98,7 @@ export function toSave(state: GameState): SaveV2 {
 // ---------- reducer ----------
 
 function startChain(state: GameState, chainId: string | null): GameState {
-  return { ...state, chainId, linkIndex: 0, links: freshLinks(), elapsedMs: 0, lastOutcome: null };
+  return { ...state, chainId, linkIndex: 0, links: freshLinks(), elapsedMs: 0, lastOutcome: null, completion: null };
 }
 
 function updateLink(links: LinkState[], index: number, patch: Partial<LinkState>): LinkState[] {
@@ -108,8 +126,15 @@ function solveCurrentLink(state: GameState, revealed: boolean, now: number): Gam
   const previous = state.history[result.chainId];
 
   if (!previous) {
+    const completion: Completion = {
+      first: true,
+      perfect: result.stars === 3,
+      newBestTime: state.stats.bestTimeMs !== null && result.timeMs < state.stats.bestTimeMs,
+      previous: null,
+    };
     return {
       ...next,
+      completion,
       stats: applyFirstCompletion(state.stats, result, localDayISO(now)),
       history: {
         ...state.history,
@@ -126,6 +151,7 @@ function solveCurrentLink(state: GameState, revealed: boolean, now: number): Gam
   // Replay: personal bests only. Stats are untouched.
   return {
     ...next,
+    completion: { first: false, perfect: false, newBestTime: false, previous },
     history: {
       ...state.history,
       [result.chainId]: {
@@ -149,6 +175,17 @@ function isValidLinkState(l: unknown): l is LinkState {
   );
 }
 
+function isValidCompletion(c: unknown): c is Completion {
+  if (typeof c !== 'object' || c === null) return false;
+  const o = c as Record<string, unknown>;
+  return (
+    typeof o.first === 'boolean' &&
+    typeof o.perfect === 'boolean' &&
+    typeof o.newBestTime === 'boolean' &&
+    (o.previous === null || (typeof o.previous === 'object' && o.previous !== undefined))
+  );
+}
+
 function hydrate(chains: Chain[], state: GameState, save: SaveV2): GameState {
   const base: GameState = {
     ...state,
@@ -157,6 +194,7 @@ function hydrate(chains: Chain[], state: GameState, save: SaveV2): GameState {
     settings: save.settings,
     hydrated: true,
     lastOutcome: null,
+    completion: null,
   };
   const p = save.progress;
   const chain = p ? chains.find((c) => c.id === p.chainId) : undefined;
@@ -173,12 +211,22 @@ function hydrate(chains: Chain[], state: GameState, save: SaveV2): GameState {
   if (!progressOk || !p) {
     return startChain(base, firstUnfinishedChainId(chains, save.history));
   }
+  const links = p.links.map((l) => ({ ...l, value: linkValue(l) }));
+  const complete = links.every((l) => l.solved);
+  let completion: Completion | null = null;
+  if (complete) {
+    // Saves from before phase 04 have no completion record: show the recap without badges or comparisons.
+    completion = isValidCompletion(p.completion)
+      ? p.completion
+      : { first: true, perfect: false, newBestTime: false, previous: null };
+  }
   return {
     ...base,
     chainId: p.chainId,
     linkIndex: p.linkIndex,
-    links: p.links.map((l) => ({ ...l, value: linkValue(l) })),
+    links,
     elapsedMs: Math.max(0, Number(p.elapsedMs) || 0),
+    completion,
   };
 }
 

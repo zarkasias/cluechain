@@ -5,6 +5,7 @@ import {
   createInitialState,
   createReducer,
   isChainComplete,
+  isReplay,
   toSave,
 } from '../reducer';
 import { freshSave } from '../storage';
@@ -111,5 +112,62 @@ describe('reducer', () => {
 
   it('COMPLETE_TUTORIAL sets seenTutorial', () => {
     expect(run(createInitialState(chains), { type: 'COMPLETE_TUTORIAL' }).settings.seenTutorial).toBe(true);
+  });
+
+  describe('completion record', () => {
+    const solveAll = (s: GameState) => chains[0].links.reduce((st, l) => run(st, guess(l.answer)), s);
+
+    it('is null until the chain is complete, and marks a perfect first completion', () => {
+      let s = run(createInitialState(chains), guess('elephant'));
+      expect(s.completion).toBeNull();
+      expect(isReplay(s)).toBe(false);
+      s = solveAll(createInitialState(chains));
+      expect(s.completion).toEqual({ first: true, perfect: true, newBestTime: false, previous: null });
+      expect(isReplay(s)).toBe(false);
+    });
+
+    it('newBestTime only when it beats an earlier best time', () => {
+      const base = { ...createInitialState(chains), stats: { ...createInitialState(chains).stats, bestTimeMs: 5000 } };
+      const fast = solveAll(run(base, { type: 'TICK', ms: 3000 }));
+      expect(fast.completion?.newBestTime).toBe(true);
+      const slow = solveAll(run(base, { type: 'TICK', ms: 9000 }));
+      expect(slow.completion?.newBestTime).toBe(false);
+    });
+
+    it('a replay records the previous best and leaves stats alone', () => {
+      const first = solveAll(run(createInitialState(chains), { type: 'TICK', ms: 4000 }));
+      const replaying = run(first, { type: 'REPLAY_CHAIN', id: 'classic-01' });
+      expect(replaying.completion).toBeNull();
+      expect(isReplay(replaying)).toBe(true);
+      const done = solveAll(run(replaying, { type: 'TICK', ms: 2000 }));
+      expect(done.completion).toEqual({
+        first: false,
+        perfect: false,
+        newBestTime: false,
+        previous: first.history['classic-01'],
+      });
+      expect(isReplay(done)).toBe(true);
+      expect(done.stats).toEqual(first.stats);
+      expect(done.history['classic-01'].bestTimeMs).toBe(2000);
+    });
+
+    it('survives a save and HYDRATE', () => {
+      const done = solveAll(createInitialState(chains));
+      const resumed = run(createInitialState(chains), { type: 'HYDRATE', save: toSave(done) });
+      expect(resumed.completion).toEqual(done.completion);
+    });
+
+    it('HYDRATE of a completed chain without a record still shows a recap', () => {
+      const done = solveAll(createInitialState(chains));
+      const save = toSave(done);
+      delete save.progress?.completion;
+      const resumed = run(createInitialState(chains), { type: 'HYDRATE', save });
+      expect(resumed.completion).toEqual({ first: true, perfect: false, newBestTime: false, previous: null });
+    });
+
+    it('ChainResult carries the per-link outcomes', () => {
+      const s = solveAll(run(createInitialState(chains), guess('giraffe'), { type: 'CLEAR_FEEDBACK' }));
+      expect(chainResult(s)?.links.map((l) => l.wrongGuesses)).toEqual([1, 0, 0, 0, 0]);
+    });
   });
 });
