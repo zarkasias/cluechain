@@ -1,4 +1,4 @@
-import type { ChainResult, Stats } from './types';
+import type { Chain, ChainResult, History, HistoryEntry, Stats } from './types';
 
 export function emptyStats(): Stats {
   return {
@@ -51,4 +51,29 @@ export function applyFirstCompletion(stats: Stats, result: ChainResult, todayISO
     bestStreak: Math.max(stats.bestStreak, currentStreak),
     lastPlayedDay: todayISO,
   };
+}
+
+/**
+ * The streak to show today. A streak that wasn't extended yesterday or today
+ * has lapsed, so it reads 0. Computed at display time; saved stats are not changed.
+ */
+export function displayStreak(stats: Pick<Stats, 'currentStreak' | 'lastPlayedDay'>, todayISO: string): number {
+  const last = stats.lastPlayedDay;
+  if (last === null) return 0;
+  return last === todayISO || last === previousDayISO(todayISO) ? stats.currentStreak : 0;
+}
+
+/** Average time per first completion, or null before any. */
+export function averageTimeMs(stats: Pick<Stats, 'totalTimeMs' | 'chainsCompleted'>): number | null {
+  return stats.chainsCompleted > 0 ? stats.totalTimeMs / stats.chainsCompleted : null;
+}
+
+export type HistoryRow = { chain: Chain; number: number; entry: HistoryEntry };
+
+/** Completed chains that still exist in the content, newest first completion first. */
+export function historyRows(chains: Chain[], history: History): HistoryRow[] {
+  return chains
+    .map((chain, i) => ({ chain, number: i + 1, entry: history[chain.id] }))
+    .filter((r): r is HistoryRow => r.entry !== undefined)
+    .sort((a, b) => b.entry.firstCompletedAt.localeCompare(a.entry.firstCompletedAt) || a.number - b.number);
 }

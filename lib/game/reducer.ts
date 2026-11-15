@@ -69,6 +69,23 @@ export function isReplay(state: GameState): boolean {
   return state.history[state.chainId] !== undefined;
 }
 
+/**
+ * Where the player is, if they've started the current chain and not finished it
+ * (any solved link, hint, miss or time). Used for "Continue chain N" and to warn
+ * before a replay discards it.
+ */
+export function chainInProgress(
+  chains: Chain[],
+  state: GameState,
+): { chain: Chain; chainNumber: number; linkNumber: number } | null {
+  const chain = currentChain(chains, state);
+  if (!chain || isChainComplete(state)) return null;
+  const started =
+    state.linkIndex > 0 || state.elapsedMs > 0 || state.links.some((l) => l.hintLetters > 0 || l.wrongGuesses > 0);
+  if (!started) return null;
+  return { chain, chainNumber: chains.indexOf(chain) + 1, linkNumber: state.linkIndex + 1 };
+}
+
 export function canHint(chains: Chain[], state: GameState): boolean {
   const chain = currentChain(chains, state);
   if (!chain || isChainComplete(state)) return false;

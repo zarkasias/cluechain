@@ -5,23 +5,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowRight } from 'lucide-react-native';
 import { useChains, useGameState } from '@/context/GameContext';
-import { currentChain, isChainComplete } from '@/lib/game';
-import type { Chain, GameState } from '@/lib/game';
+import { chainInProgress } from '@/lib/game';
 import { color, radius, space, type } from '@/constants/theme';
 
 /** Buttons are full width minus 48 (§6), capped on tablets. */
 const SIDE = 24;
 const MAX_CONTENT = 420;
-
-/** The chain number to continue, if the player is part-way through a chain. */
-function continueInfo(chains: Chain[], state: GameState): { chainNumber: number; linkNumber: number } | null {
-  const chain = currentChain(chains, state);
-  if (!chain || isChainComplete(state)) return null;
-  const started =
-    state.linkIndex > 0 || state.elapsedMs > 0 || state.links.some((l) => l.hintLetters > 0 || l.wrongGuesses > 0);
-  if (!started) return null;
-  return { chainNumber: chains.indexOf(chain) + 1, linkNumber: state.linkIndex + 1 };
-}
 
 export default function LandingPage() {
   const state = useGameState();
@@ -29,7 +18,7 @@ export default function LandingPage() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const contentWidth = Math.min(width - SIDE * 2, MAX_CONTENT);
-  const resume = continueInfo(chains, state);
+  const resume = chainInProgress(chains, state);
 
   // Replace, so Back doesn't return to the landing page.
   const play = () => router.replace('/(tabs)');

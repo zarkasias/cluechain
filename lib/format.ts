@@ -1,7 +1,11 @@
-/** m:ss, rounded to the nearest second (e.g. 102_000 → "1:42"). */
-export function formatTime(ms: number): string {
-  const totalSeconds = Math.max(0, Math.round(ms / 1000));
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+/**
+ * A duration as m:ss, or h:mm:ss from an hour up, rounded to the nearest second.
+ * 102_000 → "1:42", 725_000 → "12:05", 3_730_000 → "1:02:10".
+ */
+export function formatDuration(ms: number): string {
+  const total = Math.max(0, Math.round(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = String(total % 60).padStart(2, '0');
+  return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`;
 }

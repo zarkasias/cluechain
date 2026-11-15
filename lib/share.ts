@@ -1,7 +1,7 @@
 import { Platform, Share } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import type { Chain, ChainResult, LinkState } from '@/lib/game';
-import { formatTime } from '@/lib/format';
+import { formatDuration } from '@/lib/format';
 
 /** 🟩 clean solve · 🟨 solved with hints or misses · 🟥 revealed. */
 export function linkSquare(link: LinkState): string {
@@ -22,7 +22,7 @@ export function buildShareText(chain: Pick<Chain, 'title'>, result: ChainResult,
   const stars = '★'.repeat(result.stars) + '☆'.repeat(3 - result.stars);
   return [
     `Clue Chains #${chainNumber} · ${chain.title}`,
-    `${stars}  ${result.score} pts  ⏱ ${formatTime(result.timeMs)}`,
+    `${stars}  ${result.score} pts  ⏱ ${formatDuration(result.timeMs)}`,
     result.links.map(linkSquare).join(''),
   ].join('\n');
 }

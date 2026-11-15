@@ -1,6 +1,6 @@
 import { chains } from '../../../data/chains';
 import { createInitialState, createReducer } from '../reducer';
-import { applyFirstCompletion, emptyStats, previousDayISO } from '../stats';
+import { applyFirstCompletion, averageTimeMs, displayStreak, emptyStats, historyRows, previousDayISO } from '../stats';
 import type { ChainResult, GameState } from '../types';
 
 const result: ChainResult = {
@@ -88,5 +88,38 @@ describe('replaying a completed chain (B2 regression)', () => {
     // The personal best is kept.
     expect(s.history[chains[0].id].bestScore).toBe(600);
     expect(s.history[chains[0].id].stars).toBe(3);
+  });
+});
+
+describe('display helpers', () => {
+
+  it('shows the streak when last played today or yesterday', () => {
+    expect(displayStreak({ currentStreak: 2, lastPlayedDay: '2026-11-15' }, '2026-11-15')).toBe(2);
+    expect(displayStreak({ currentStreak: 2, lastPlayedDay: '2026-11-14' }, '2026-11-15')).toBe(2);
+  });
+
+  it('shows 0 after a gap, without changing the saved stats', () => {
+    const stats = { ...emptyStats(), currentStreak: 5, bestStreak: 5, lastPlayedDay: '2026-11-13' };
+    expect(displayStreak(stats, '2026-11-15')).toBe(0);
+    expect(stats.currentStreak).toBe(5);
+    expect(displayStreak({ currentStreak: 0, lastPlayedDay: null }, '2026-11-15')).toBe(0);
+  });
+
+  it('averages time over first completions', () => {
+    expect(averageTimeMs({ totalTimeMs: 0, chainsCompleted: 0 })).toBeNull();
+    expect(averageTimeMs({ totalTimeMs: 300_000, chainsCompleted: 3 })).toBe(100_000);
+  });
+
+  it('lists history newest first and skips chains no longer in the content', () => {
+    const e = (at: string) => ({ stars: 3 as const, bestScore: 1, bestTimeMs: 1, firstCompletedAt: at });
+    const rows = historyRows(chains, {
+      'classic-01': e('2026-11-13T10:00:00.000Z'),
+      'classic-03': e('2026-11-15T10:00:00.000Z'),
+      gone: e('2026-11-16T10:00:00.000Z'),
+    });
+    expect(rows.map((r) => [r.chain.id, r.number])).toEqual([
+      ['classic-03', 3],
+      ['classic-01', 1],
+    ]);
   });
 });

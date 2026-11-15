@@ -283,7 +283,6 @@ export default function GameScreen() {
     setAnswer('');
     clearFeedback();
     if (chain) dispatch({ type: 'REPLAY_CHAIN', id: chain.id });
-    else if (chains[0]) dispatch({ type: 'REPLAY_CHAIN', id: chains[0].id });
   };
 
   const contentStyle = useAnimatedStyle(() => ({ opacity: contentOpacity.value }));
@@ -298,7 +297,7 @@ export default function GameScreen() {
   const result = chainResult(state);
 
   if (!chain) {
-    return <RecapView kind="all" onReplayFirst={replay} />;
+    return <RecapView kind="all" />;
   }
 
   if (showCompletion && result && state.completion) {

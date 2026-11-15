@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowRight, Share2, Star, Trophy } from 'lucide-react-native';
 import type { Chain, ChainResult, Completion } from '@/lib/game';
-import { formatTime } from '@/lib/format';
+import { formatDuration } from '@/lib/format';
 import { buildShareText, shareText } from '@/lib/share';
 import { haptics } from '@/lib/haptics';
 import { color, layout, radius, space, type } from '@/constants/theme';
@@ -22,7 +22,7 @@ type RecapViewProps =
       onNext: () => void;
       onReplay: () => void;
     }
-  | { kind: 'all'; onReplayFirst: () => void };
+  | { kind: 'all' };
 
 const REPLAY_CAPTION = "Replays don't change your stats";
 
@@ -44,7 +44,7 @@ export default function RecapView(props: RecapViewProps) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.column}>
-          {props.kind === 'all' ? <AllComplete {...props} /> : <ChainRecap {...props} onCopied={onCopied} />}
+          {props.kind === 'all' ? <AllComplete /> : <ChainRecap {...props} onCopied={onCopied} />}
         </View>
       </ScrollView>
       <Toast message="Copied!" showKey={toastKey} />
@@ -62,7 +62,7 @@ function ChainRecap({ chain, chainNumber, result, completion, onNext, onReplay, 
 
   useEffect(() => {
     AccessibilityInfo.announceForAccessibility(
-      `Chain complete. ${result.stars} of 3 stars. ${result.score} points. Time ${formatTime(result.timeMs)}.`,
+      `Chain complete. ${result.stars} of 3 stars. ${result.score} points. Time ${formatDuration(result.timeMs)}.`,
     );
   }, [result]);
 
@@ -126,7 +126,7 @@ function ChainRecap({ chain, chainNumber, result, completion, onNext, onReplay, 
       <View style={styles.breakdown}>
         <Row label="Links" value={String(linkTotal)} />
         <Row label="Perfect bonus" value={bonus > 0 ? `+${bonus}` : '—'} muted={bonus === 0} />
-        <Row label="Time" value={formatTime(result.timeMs)} />
+        <Row label="Time" value={formatDuration(result.timeMs)} />
         <View style={styles.divider} />
         <View style={styles.totalRow} accessible accessibilityLabel={`Score ${result.score} points`}>
           <Text style={styles.totalLabel}>Score</Text>
@@ -173,19 +173,19 @@ function PersonalBest({ result, previous }: { result: ChainResult; previous: Non
       />
       <Row
         label="Time"
-        value={newTime ? `${formatTime(previous.bestTimeMs)} → ${formatTime(result.timeMs)}` : formatTime(previous.bestTimeMs)}
+        value={newTime ? `${formatDuration(previous.bestTimeMs)} → ${formatDuration(result.timeMs)}` : formatDuration(previous.bestTimeMs)}
         tag={newTime ? 'New best!' : undefined}
         a11y={
           newTime
-            ? `New best time: ${formatTime(result.timeMs)}, down from ${formatTime(previous.bestTimeMs)}`
-            : `Best time ${formatTime(previous.bestTimeMs)}`
+            ? `New best time: ${formatDuration(result.timeMs)}, down from ${formatDuration(previous.bestTimeMs)}`
+            : `Best time ${formatDuration(previous.bestTimeMs)}`
         }
       />
     </View>
   );
 }
 
-function AllComplete({ onReplayFirst }: Extract<RecapViewProps, { kind: 'all' }>) {
+function AllComplete() {
   return (
     <View style={styles.all}>
       <Trophy size={56} color={color.gold} />
@@ -195,25 +195,14 @@ function AllComplete({ onReplayFirst }: Extract<RecapViewProps, { kind: 'all' }>
       <Text style={[styles.message, styles.center]}>New chains are coming soon.</Text>
       <Pressable
         style={({ pressed }) => [styles.button, styles.primary, styles.stretch, pressed && styles.primaryPressed]}
-        onPress={() => router.push('/stats')}
+        onPress={() => router.navigate('/stats')}
         accessibilityRole="button"
-        accessibilityLabel="See your history in Stats"
+        accessibilityLabel="See your history in Stats. You can replay any chain from there."
       >
         <Text style={styles.primaryText}>See your history</Text>
         <ArrowRight size={20} color={color.white} />
       </Pressable>
-      <View style={styles.replay}>
-        <Pressable
-          style={styles.tertiary}
-          onPress={onReplayFirst}
-          accessibilityRole="button"
-          accessibilityLabel="Replay chain 1. Replays don't change your stats."
-          hitSlop={4}
-        >
-          <Text style={styles.tertiaryText}>Replay chain 1</Text>
-        </Pressable>
-        <Text style={styles.caption}>{REPLAY_CAPTION}</Text>
-      </View>
+      <Text style={[styles.caption, styles.center]}>Replay any chain from your history.</Text>
     </View>
   );
 }
