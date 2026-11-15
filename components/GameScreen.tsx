@@ -1,287 +1,305 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Platform, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { GradientView } from '@/components/GradientView';
-import ClueDisplay from './ClueDisplay';
-import AnswerInput, { AnswerInputHandle } from './AnswerInput';
-import WordChain from './WordChain';
-import GameControls from './GameControls';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, LayoutChangeEvent, StyleSheet, useWindowDimensions, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChains, useGameDispatch, useGameState } from '@/context/GameContext';
-import { canHint, chainResult, chainScore, currentChain, isChainComplete } from '@/lib/game';
-import { Colors, Gradients } from '@/constants/Colors';
+import {
+  answerLetters,
+  canHint,
+  chainResult,
+  chainScore,
+  clueText,
+  currentChain,
+  HINT_LETTER_PENALTY,
+  isChainComplete,
+} from '@/lib/game';
+import { haptics } from '@/lib/haptics';
+import { color, layout, motion, space } from '@/constants/theme';
+import PlayHeader from './play/PlayHeader';
+import ChainTrack from './play/ChainTrack';
+import ClueCard from './play/ClueCard';
+import LetterTiles, { TileFill } from './play/LetterTiles';
+import AnswerInput, { AnswerInputHandle, InputTone } from './play/AnswerInput';
+import FeedbackLine, { Feedback } from './play/FeedbackLine';
+import ActionBar from './play/ActionBar';
+import ConfirmSheet from './play/ConfirmSheet';
+import CompletionCard from './play/CompletionCard';
+
+/** A solved or revealed link that stays on screen while its tiles fill, before moving on. */
+type Transition = { index: number; mode: Exclude<TileFill, null> };
+type Sheet = 'reveal' | 'restart' | null;
+
+/** Below this height (e.g. 360×740 with the keyboard up) the layout tightens. */
+const COMPACT_HEIGHT = 600;
+/** At or above this height the clue card grows to its minimum height. */
+const TALL_HEIGHT = 700;
+/** Tablets and desktop web: keep the input under the card instead of at the bottom. */
+const WIDE_WIDTH = 600;
 
 export default function GameScreen() {
   const state = useGameState();
   const chains = useChains();
   const dispatch = useGameDispatch();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const { linkIndex, links, lastOutcome } = state;
   const chain = currentChain(chains, state);
   const complete = isChainComplete(state);
 
-  const [userAnswer, setUserAnswer] = useState('');
-  const [isAnimating, setIsAnimating] = useState(false);
-  // While the "correct" transition plays, keep showing the link that was just solved.
-  const [frozenIndex, setFrozenIndex] = useState<number | null>(null);
+  const [answer, setAnswer] = useState('');
+  const [feedback, setFeedback] = useState<Feedback>(null);
+  const [tone, setTone] = useState<InputTone>(null);
+  const [shakeKey, setShakeKey] = useState(0);
+  const [transition, setTransition] = useState<Transition | null>(null);
+  const [sheet, setSheet] = useState<Sheet>(null);
+  const [height, setHeight] = useState(0);
 
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const slideAnim = useRef(new Animated.Value(0)).current;
-  const answerInputRef = useRef<AnswerInputHandle>(null);
+  const inputRef = useRef<AnswerInputHandle>(null);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const contentOpacity = useSharedValue(1);
 
-  const shownIndex = frozenIndex ?? linkIndex;
-  const showComplete = complete && frozenIndex === null;
+  const later = (fn: () => void, ms: number) => {
+    timers.current.push(setTimeout(fn, ms));
+  };
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
-  useEffect(() => {
-    fadeAnim.setValue(1);
-    slideAnim.setValue(0);
-  }, [chain?.id, fadeAnim, slideAnim]);
+  const busy = transition !== null;
+  const shownIndex = transition?.index ?? linkIndex;
+  const showCompletion = complete && !transition;
+  const compact = height > 0 && height < COMPACT_HEIGHT;
+  const tall = height >= TALL_HEIGHT;
+  const wide = width >= WIDE_WIDTH;
 
-  useEffect(() => {
-    if (!complete && !isAnimating && Platform.OS !== 'ios') {
-      const t = setTimeout(() => answerInputRef.current?.focus(), 100);
-      return () => clearTimeout(t);
-    }
-  }, [linkIndex, complete, isAnimating]);
+  const focusInput = useCallback(() => inputRef.current?.focus(), []);
 
-  const animateTransition = (callback: () => void) => {
-    setIsAnimating(true);
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: -50, duration: 300, useNativeDriver: true }),
-    ]).start(() => {
-      callback();
-      fadeAnim.setValue(0);
-      slideAnim.setValue(50);
-      Animated.parallel([
-        Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
-        Animated.timing(slideAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
-      ]).start(() => setIsAnimating(false));
-    });
+  /** Hold the finished link for `holdMs`, then crossfade (150 ms) to whatever comes next. */
+  const finishTransition = (holdMs: number) => {
+    later(() => {
+      contentOpacity.value = withTiming(0, { duration: motion.fast });
+      later(() => {
+        setTransition(null);
+        setAnswer('');
+        setTone(null);
+        contentOpacity.value = withTiming(1, { duration: motion.fast });
+        focusInput();
+      }, motion.fast);
+    }, holdMs);
   };
 
-  // React to the reducer's verdict on the last guess.
-  useEffect(() => {
+  // React to the reducer's verdict. Layout effect so the next link never flashes before the hold.
+  useLayoutEffect(() => {
+    if (!chain || lastOutcome === null) return;
     if (lastOutcome === 'correct') {
-      animateTransition(() => {
-        setFrozenIndex(null);
-        setUserAnswer('');
-        dispatch({ type: 'CLEAR_FEEDBACK' });
-      });
-    } else {
-      setFrozenIndex(null);
+      const index = complete ? linkIndex : linkIndex - 1;
+      const solved = chain.links[index];
+      setTransition({ index, mode: 'correct' });
+      setFeedback({ kind: 'correct', word: solved.answer });
+      setTone('correct');
+      haptics.success();
+      dispatch({ type: 'CLEAR_FEEDBACK' });
+      finishTransition(answerLetters(solved).length * 30 + 450);
+    } else if (lastOutcome === 'wrong') {
+      setFeedback({ kind: 'wrong', variant: links[linkIndex].wrongGuesses - 1 });
+      setTone('wrong');
+      setShakeKey((k) => k + 1);
+      haptics.error();
+    } else if (lastOutcome === 'near') {
+      setFeedback({ kind: 'near' });
+      setTone('near');
+      haptics.light();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastOutcome]);
 
-  const resetInput = () => {
-    setUserAnswer('');
-    setFrozenIndex(null);
-  };
+  // Announce each new link to screen readers, and focus the input on every platform.
+  useEffect(() => {
+    if (!chain || busy || complete) return;
+    AccessibilityInfo.announceForAccessibility(
+      `Link ${linkIndex + 1} of 5. ${clueText(chain.links[linkIndex].clue)}`,
+    );
+    const t = setTimeout(focusInput, 50);
+    return () => clearTimeout(t);
+  }, [chain, linkIndex, busy, complete, focusInput]);
 
-  const handleChangeText = (text: string) => {
-    setUserAnswer(text);
+  const clearFeedback = () => {
+    setFeedback(null);
+    setTone(null);
     if (lastOutcome === 'wrong' || lastOutcome === 'near') dispatch({ type: 'CLEAR_FEEDBACK' });
   };
 
+  const handleChangeText = (text: string) => {
+    setAnswer(text);
+    if (feedback || tone) clearFeedback();
+  };
+
   const handleSubmit = () => {
-    // Feedback must be cleared (by typing) before the same text is judged again.
-    if (userAnswer.trim() === '' || isAnimating || lastOutcome !== null) return;
-    setFrozenIndex(linkIndex);
-    dispatch({ type: 'SUBMIT_GUESS', guess: userAnswer });
+    // A wrong guess must be edited before it can be judged again (no double penalty).
+    if (busy || answer.trim() === '' || lastOutcome !== null) return;
+    dispatch({ type: 'SUBMIT_GUESS', guess: answer });
   };
 
   const handleHint = () => {
-    if (!isAnimating) dispatch({ type: 'HINT' });
-  };
-  const handleReveal = () => {
-    if (isAnimating) return;
-    resetInput();
-    dispatch({ type: 'REVEAL' });
-  };
-  const handleRestart = () => {
-    if (isAnimating) return;
-    resetInput();
-    dispatch({ type: 'RESTART' });
-  };
-  const handleNextChain = () => {
-    if (isAnimating) return;
-    resetInput();
-    dispatch({ type: 'NEXT_CHAIN' });
-  };
-  const handlePlayFromStart = () => {
-    resetInput();
-    if (chains[0]) dispatch({ type: 'REPLAY_CHAIN', id: chains[0].id });
+    if (busy || !canHint(chains, state)) return;
+    dispatch({ type: 'HINT' });
+    setFeedback({ kind: 'hint', cost: HINT_LETTER_PENALTY });
+    setTone(null);
+    haptics.selection();
   };
 
-  const solvedWords = chain ? chain.links.filter((_, i) => links[i]?.solved).map((l) => l.answer) : [];
+  const confirmReveal = () => {
+    setSheet(null);
+    if (!chain || busy || complete) return;
+    setTransition({ index: linkIndex, mode: 'revealed' });
+    setFeedback(null);
+    setTone(null);
+    dispatch({ type: 'REVEAL' });
+    finishTransition(answerLetters(chain.links[linkIndex]).length * 60 + 400);
+  };
+
+  const confirmRestart = () => {
+    setSheet(null);
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    setTransition(null);
+    setAnswer('');
+    clearFeedback();
+    contentOpacity.value = 1;
+    dispatch({ type: 'RESTART' });
+  };
+
+  const goNext = () => {
+    setAnswer('');
+    clearFeedback();
+    dispatch({ type: 'NEXT_CHAIN' });
+  };
+
+  const replay = () => {
+    setAnswer('');
+    clearFeedback();
+    if (chain) dispatch({ type: 'REPLAY_CHAIN', id: chain.id });
+    else if (chains[0]) dispatch({ type: 'REPLAY_CHAIN', id: chains[0].id });
+  };
+
+  const contentStyle = useAnimatedStyle(() => ({ opacity: contentOpacity.value }));
+  const onLayout = (e: LayoutChangeEvent) => setHeight(e.nativeEvent.layout.height);
+  const gap = compact ? space.sm : space.lg;
+
+  const untouched = linkIndex === 0 && links[0].hintLetters === 0 && links[0].wrongGuesses === 0 && !links[0].solved;
   const result = chainResult(state);
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <View style={styles.header}>
-        <Text style={styles.title}>Clue Chains</Text>
-        <View style={styles.pointsWrapper}>
-          <GradientView colors={Gradients.accent} style={styles.pointsContainer}>
-            <Text style={styles.points}>Points: {chainScore(links)}</Text>
-          </GradientView>
-        </View>
-      </View>
-
-      <View style={styles.mainContent}>
+    <View style={[styles.root, { paddingTop: insets.top + space.sm }]} onLayout={onLayout}>
+      <View style={[styles.column, { gap }]}>
         {!chain ? (
-          <GradientView colors={[Colors.surface, Colors.surfaceSecondary]} style={styles.contentCard}>
-            <Text style={styles.completionTitle}>All chains complete!</Text>
-            <Text style={styles.completionMessage}>You've finished every chain. More are on the way.</Text>
-            <TouchableOpacity
-              style={styles.replayButton}
-              onPress={handlePlayFromStart}
-              accessibilityRole="button"
-              accessibilityLabel="Play the first chain again"
-            >
-              <Text style={styles.replayButtonText}>Play again from the start</Text>
-            </TouchableOpacity>
-          </GradientView>
+          <CompletionCard kind="all" onPlayFirst={replay} />
         ) : (
-          <Animated.View
-            style={[styles.clueContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
-          >
-            <WordChain solvedWords={solvedWords} />
-            {!showComplete ? (
-              <GradientView colors={[Colors.surface, Colors.surfaceHighlight]} style={styles.contentCard}>
-                <ClueDisplay link={chain.links[shownIndex]} hintLetters={links[shownIndex].hintLetters} />
-                <AnswerInput
-                  ref={answerInputRef}
-                  value={userAnswer}
-                  onChangeText={handleChangeText}
-                  onSubmit={handleSubmit}
-                  outcome={lastOutcome}
-                />
-                <GameControls
-                  onHint={handleHint}
-                  onReveal={handleReveal}
-                  onRestart={handleRestart}
-                  onNextChain={handleNextChain}
-                  hintAvailable={canHint(chains, state)}
-                  isCompleted={false}
-                />
-              </GradientView>
-            ) : (
-              <GradientView colors={[Colors.surface, Colors.surfaceSecondary]} style={styles.contentCard}>
-                <Text style={styles.completionTitle}>Chain Complete!</Text>
-                <Text style={styles.completionMessage}>{chain.title}</Text>
-                {result && (
-                  <Text
-                    style={styles.completionPoints}
-                    accessibilityLabel={`${result.stars} of 3 stars. ${result.score} points.`}
+          <>
+            <PlayHeader
+              chainNumber={chains.indexOf(chain) + 1}
+              totalChains={chains.length}
+              difficulty={chain.difficulty}
+              title={chain.title}
+              score={chainScore(links)}
+              compact={compact}
+            />
+            <ChainTrack chain={chain} links={links} currentIndex={complete ? -1 : linkIndex} />
+
+            <Animated.View style={[contentStyle, showCompletion ? null : styles.grow]}>
+              {showCompletion && result ? (
+                <CompletionCard kind="chain" title={chain.title} result={result} onNext={goNext} onReplay={replay} />
+              ) : (
+                <View style={[styles.grow, { gap }]}>
+                  <ClueCard
+                    key={`${chain.id}-${shownIndex}`}
+                    link={chain.links[shownIndex]}
+                    linkIndex={shownIndex}
+                    compact={compact}
+                    style={tall ? (wide ? styles.cardTall : [styles.cardTall, styles.cardGrow]) : null}
                   >
-                    {'★'.repeat(result.stars) + '☆'.repeat(3 - result.stars)} Points earned: {result.score}
-                  </Text>
-                )}
-                <GameControls
-                  onHint={handleHint}
-                  onReveal={handleReveal}
-                  onRestart={handleRestart}
-                  onNextChain={handleNextChain}
-                  hintAvailable={false}
-                  isCompleted
-                />
-              </GradientView>
-            )}
-          </Animated.View>
+                    <LetterTiles
+                      link={chain.links[shownIndex]}
+                      hintLetters={links[shownIndex].hintLetters}
+                      fill={transition?.mode ?? null}
+                      maxSize={compact ? 36 : 44}
+                    />
+                  </ClueCard>
+
+                  <View style={wide ? null : styles.spacer} />
+
+                  <View style={[styles.bottom, { gap: compact ? space.xs : space.sm }]}>
+                    <FeedbackLine feedback={feedback} />
+                    <AnswerInput
+                      ref={inputRef}
+                      value={answer}
+                      onChangeText={handleChangeText}
+                      onSubmit={handleSubmit}
+                      tone={tone}
+                      shakeKey={shakeKey}
+                      disabled={busy}
+                    />
+                    <ActionBar
+                      hintCost={HINT_LETTER_PENALTY}
+                      canHint={canHint(chains, state)}
+                      showRestart={!untouched}
+                      disabled={busy}
+                      onHint={handleHint}
+                      onReveal={() => setSheet('reveal')}
+                      onRestart={() => setSheet('restart')}
+                    />
+                  </View>
+                </View>
+              )}
+            </Animated.View>
+          </>
         )}
       </View>
+
+      <ConfirmSheet
+        visible={sheet === 'reveal'}
+        title="Reveal this word?"
+        message="You'll score 0 for this link."
+        confirmLabel="Reveal"
+        onConfirm={confirmReveal}
+        onCancel={() => setSheet(null)}
+      />
+      <ConfirmSheet
+        visible={sheet === 'restart'}
+        title="Restart this chain?"
+        message="Your progress on it will be lost."
+        confirmLabel="Restart"
+        onConfirm={confirmRestart}
+        onCancel={() => setSheet(null)}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: 'transparent',
-    paddingBottom: Platform.OS === 'ios' ? 100 : 80,
+    backgroundColor: color.bg,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    paddingBottom: 3,
-    marginBottom: 3,
-    marginTop: Platform.OS === 'ios' ? 35 : 0,
-  },
-  title: {
-    fontSize: 30,
-    fontFamily: 'Play-Bold',
-    padding: 12,
-    color: Colors.textOnPrimary,
-  },
-  pointsWrapper: {
-    flexShrink: 1,
-    flexGrow: 0,
-  },
-  pointsContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 16,
-    borderRadius: 20,
-    elevation: 2,
-    shadowColor: Colors.cardShadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  points: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.textOnPrimary,
-    textAlign: 'center',
-  },
-  mainContent: {
+  column: {
     flex: 1,
-    paddingHorizontal: 14,
-    justifyContent: 'flex-start',
-  },
-  clueContainer: {
     width: '100%',
+    maxWidth: layout.maxWidth,
+    alignSelf: 'center',
+    paddingHorizontal: layout.gutter,
+    paddingBottom: space.sm,
   },
-  contentCard: {
-    width: '100%',
-    padding: 8,
-    borderRadius: 16,
-    elevation: 6,
-    shadowColor: Colors.cardShadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
+  grow: {
+    flex: 1,
   },
-  completionTitle: {
-    fontSize: 28,
-    fontFamily: 'Play-Bold',
-    color: Colors.secondary,
-    marginBottom: 10,
+  cardTall: {
+    minHeight: 220,
   },
-  completionMessage: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: Colors.primary,
-    marginBottom: 10,
+  cardGrow: {
+    flexGrow: 1,
+    maxHeight: 320,
   },
-  completionPoints: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: Colors.textSecondary,
+  spacer: {
+    flex: 1,
+    minHeight: 0,
   },
-  replayButton: {
-    minHeight: 44,
-    marginVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    backgroundColor: Colors.secondaryDark,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  replayButtonText: {
-    color: Colors.textOnPrimary,
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  bottom: {},
 });

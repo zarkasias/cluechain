@@ -25,7 +25,15 @@ export const color = {
   tileBorder: '#C9D1E3',
   slotEmpty: '#24375C', // future chain slot on bg
   focus: '#60A5FA',
+  // Not in DESIGN_SPEC §1's table, but named in the spec text (§2.3 shadow, §2.7 scrim, §9 tab border).
+  white: '#FFFFFF',
+  shadow: 'rgba(0,0,0,0.25)',
+  scrim: 'rgba(0,0,0,0.5)',
+  hairline: 'rgba(255,255,255,0.06)',
 } as const;
+
+/** Content max width (tablet / web), centred. */
+export const layout = { maxWidth: 560, gutter: 16 } as const;
 
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;
 

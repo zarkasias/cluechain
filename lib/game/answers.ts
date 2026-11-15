@@ -71,6 +71,14 @@ export function answerLetters(link: Link): string {
   return normalize(link.answer).toUpperCase();
 }
 
+/** The canonical answer split into words of tile letters: "ice cream" → ["ICE", "CREAM"]. */
+export function answerWords(link: Link): string[] {
+  return link.answer
+    .split(/\s+/)
+    .map((w) => normalize(w).toUpperCase())
+    .filter(Boolean);
+}
+
 /** The most hint letters a link allows: every letter but the last. */
 export function maxHintLetters(link: Link): number {
   return Math.max(0, answerLetters(link).length - 1);

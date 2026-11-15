@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
 import { chains } from '@/data/chains';
+import { setHapticsEnabled } from '@/lib/haptics';
 import { createInitialState, createReducer, createSaver, loadSave, toSave } from '@/lib/game';
 import type { Chain, GameAction, GameState } from '@/lib/game';
 
@@ -17,6 +18,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const saver = useMemo(() => createSaver(AsyncStorage), []);
   const latest = useRef(state);
   latest.current = state;
+
+  useEffect(() => {
+    setHapticsEnabled(state.settings.haptics);
+  }, [state.settings.haptics]);
 
   // Hydrate once.
   useEffect(() => {
