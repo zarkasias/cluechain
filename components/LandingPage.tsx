@@ -1,37 +1,68 @@
 import React from 'react';
-import {
-  View,
-  StyleSheet,
-  Text,
-  ImageBackground,
-  TouchableOpacity,
-  Dimensions,
-  Platform,
-} from 'react-native';
+import { ImageBackground, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { Colors } from '@/constants/Colors';
+import { ArrowRight } from 'lucide-react-native';
+import { useChains, useGameState } from '@/context/GameContext';
+import { currentChain, isChainComplete } from '@/lib/game';
+import type { Chain, GameState } from '@/lib/game';
+import { color, radius, space, type } from '@/constants/theme';
+
+/** Buttons are full width minus 48 (§6), capped on tablets. */
+const SIDE = 24;
+const MAX_CONTENT = 420;
+
+/** The chain number to continue, if the player is part-way through a chain. */
+function continueInfo(chains: Chain[], state: GameState): { chainNumber: number; linkNumber: number } | null {
+  const chain = currentChain(chains, state);
+  if (!chain || isChainComplete(state)) return null;
+  const started =
+    state.linkIndex > 0 || state.elapsedMs > 0 || state.links.some((l) => l.hintLetters > 0 || l.wrongGuesses > 0);
+  if (!started) return null;
+  return { chainNumber: chains.indexOf(chain) + 1, linkNumber: state.linkIndex + 1 };
+}
 
 export default function LandingPage() {
-  const handleStartGame = () => {
-    router.push('/(tabs)');
-  };
+  const state = useGameState();
+  const chains = useChains();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const contentWidth = Math.min(width - SIDE * 2, MAX_CONTENT);
+  const resume = continueInfo(chains, state);
+
+  // Replace, so Back doesn't return to the landing page.
+  const play = () => router.replace('/(tabs)');
+
+  const label = resume ? `Continue chain ${resume.chainNumber}` : 'Play';
 
   return (
-    <ImageBackground
-      source={require('@/assets/images/launchscreen.jpg')}
-      style={styles.background}
-      resizeMode="cover"
-    >
-      <View style={styles.overlay}>
-        <View style={styles.content}>
-          <Text style={styles.title}>ClueChain</Text>
-          <TouchableOpacity
-            style={styles.startButton}
-            onPress={handleStartGame}
-            activeOpacity={0.8}
+    <ImageBackground source={require('@/assets/images/launchscreen.jpg')} style={styles.background} resizeMode="cover">
+      <LinearGradient
+        colors={[color.transparent, color.landingScrim]}
+        locations={[0.3, 0.75]}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
+      <View style={[styles.content, { paddingBottom: insets.bottom + space.xxl + space.lg }]}>
+        <View style={[styles.inner, { width: contentWidth }]}>
+          <Text style={styles.title} accessibilityRole="header">
+            Clue Chains
+          </Text>
+          <Text style={styles.tagline}>Every answer is the next clue.</Text>
+
+          <Pressable
+            style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+            onPress={play}
+            accessibilityRole="button"
+            accessibilityLabel={resume ? `${label}, link ${resume.linkNumber} of 5` : label}
           >
-            <Text style={styles.startButtonText}>Start Game</Text>
-          </TouchableOpacity>
+            <View style={styles.buttonLabel}>
+              <Text style={styles.buttonText}>{label}</Text>
+              {resume && <Text style={styles.buttonSub}>Link {resume.linkNumber} of 5</Text>}
+            </View>
+            <ArrowRight size={22} color={color.white} />
+          </Pressable>
         </View>
       </View>
     </ImageBackground>
@@ -41,44 +72,57 @@ export default function LandingPage() {
 const styles = StyleSheet.create({
   background: {
     flex: 1,
-    width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height,
+    backgroundColor: color.bgDeep,
   },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  // The title and button sit in the lower third.
   content: {
+    flex: 1,
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    padding: 20,
+  },
+  inner: {
+    alignItems: 'center',
+    gap: space.md,
   },
   title: {
-    fontSize: 48,
     fontFamily: 'Play-Bold',
-    color: Colors.textOnPrimary,
-    marginBottom: 40,
+    fontSize: 52,
+    lineHeight: 60,
+    color: color.ink,
     textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 4,
   },
-  startButton: {
-    backgroundColor: Colors.secondary,
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+  tagline: {
+    ...type.body,
+    color: color.ink,
+    textAlign: 'center',
+    marginBottom: space.xl,
   },
-  startButtonText: {
-    color: Colors.textOnPrimary,
+  button: {
+    alignSelf: 'stretch',
+    minHeight: 56,
+    borderRadius: radius.md,
+    backgroundColor: color.linkFill,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.md,
+    paddingHorizontal: space.xl,
+    paddingVertical: space.sm,
+  },
+  buttonPressed: {
+    backgroundColor: color.linkDeep,
+  },
+  buttonLabel: {
+    alignItems: 'center',
+  },
+  buttonText: {
+    fontFamily: 'Play-Bold',
     fontSize: 20,
-    fontFamily: 'Play-Bold',
-    textAlign: 'center',
+    color: color.white,
+  },
+  buttonSub: {
+    fontSize: 13,
+    lineHeight: 16,
+    color: color.white,
   },
 });

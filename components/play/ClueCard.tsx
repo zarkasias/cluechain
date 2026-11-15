@@ -1,4 +1,4 @@
-import React, { ReactNode, useMemo } from 'react';
+import React, { ReactNode, Ref, useMemo } from 'react';
 import { StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { clueText, parseClue } from '@/lib/game';
 import type { Link } from '@/lib/game';
@@ -13,6 +13,10 @@ type ClueCardProps = {
   children?: ReactNode;
   compact?: boolean;
   style?: StyleProp<ViewStyle>;
+  /** Ref to the link chip (links 2–5), for measuring it. */
+  linkChipRef?: Ref<React.ComponentRef<typeof View>>;
+  /** Pulse the link chip on mount. Defaults to true for links 2–5. */
+  pulse?: boolean;
 };
 
 type Piece = { text: string; isLink: boolean };
@@ -53,6 +57,8 @@ export default function ClueCard({
   children,
   compact,
   style,
+  linkChipRef,
+  pulse = linkIndex > 0,
 }: ClueCardProps) {
   const groups = useMemo(() => toWordGroups(link.clue), [link.clue]);
   const clueStyle = compact ? styles.clueCompact : styles.clue;
@@ -81,7 +87,8 @@ export default function ClueCard({
                     key={pi}
                     word={piece.text}
                     textStyle={clueStyle}
-                    pulse={linkIndex > 0}
+                    pulse={pulse}
+                    chipRef={linkChipRef}
                     maxFontSizeMultiplier={CLUE_SCALE}
                   />
                 ) : (

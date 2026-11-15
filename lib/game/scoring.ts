@@ -5,6 +5,10 @@ export const WRONG_GUESS_PENALTY = 10;
 export const HINT_LETTER_PENALTY = 20;
 export const LINK_FLOOR = 10;
 export const PERFECT_BONUS = 100;
+/** ★★★: no hints, no reveals, and at most this many wrong guesses in the whole chain. */
+export const THREE_STAR_MAX_WRONG = 2;
+/** ★★: no reveals, and at most this many hint letters in the whole chain. */
+export const TWO_STAR_MAX_HINTS = 3;
 
 export function newLinkState(): LinkState {
   return { hintLetters: 0, wrongGuesses: 0, revealed: false, solved: false, value: LINK_START_VALUE };
@@ -45,7 +49,7 @@ export function chainScore(links: LinkState[]): number {
 
 export function stars(links: LinkState[]): Stars {
   const t = totals(links);
-  if (t.hints === 0 && t.reveals === 0 && t.wrong <= 2) return 3;
-  if (t.reveals === 0 && t.hints <= 3) return 2;
+  if (t.hints === 0 && t.reveals === 0 && t.wrong <= THREE_STAR_MAX_WRONG) return 3;
+  if (t.reveals === 0 && t.hints <= TWO_STAR_MAX_HINTS) return 2;
   return 1;
 }

@@ -5,3 +5,4 @@ export * from './scoring';
 export * from './stats';
 export * from './reducer';
 export * from './storage';
+export * from './tutorial';

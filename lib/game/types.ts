@@ -134,4 +134,6 @@ export type GameAction =
   | { type: 'REPLAY_CHAIN'; id: string }
   | { type: 'TICK'; ms: number }
   | { type: 'HYDRATE'; save: SaveV2 }
-  | { type: 'COMPLETE_TUTORIAL' };
+  | { type: 'COMPLETE_TUTORIAL' }
+  /** From the Guide tab: show the tutorial again. The current chain is kept. */
+  | { type: 'REPLAY_TUTORIAL' };

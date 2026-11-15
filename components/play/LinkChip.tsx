@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, TextStyle } from 'react-native';
+import React, { Ref, useEffect } from 'react';
+import { StyleSheet, TextStyle, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -17,10 +17,12 @@ type LinkChipProps = {
   /** Pulse once on mount (links 2–5) so the eye catches the carry-over. */
   pulse?: boolean;
   maxFontSizeMultiplier?: number;
+  /** For measuring the chip (the tutorial highlights it). */
+  chipRef?: Ref<React.ComponentRef<typeof View>>;
 };
 
 /** The previous answer shown inside a clue: a pink chip with the word in uppercase. */
-export default function LinkChip({ word, textStyle, pulse, maxFontSizeMultiplier }: LinkChipProps) {
+export default function LinkChip({ word, textStyle, pulse, maxFontSizeMultiplier, chipRef }: LinkChipProps) {
   const reduceMotion = useReduceMotion();
   const scale = useSharedValue(1);
 
@@ -36,7 +38,7 @@ export default function LinkChip({ word, textStyle, pulse, maxFontSizeMultiplier
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   return (
-    <Animated.View style={[styles.chip, style]}>
+    <Animated.View ref={chipRef} style={[styles.chip, style]}>
       <Animated.Text style={[textStyle, styles.text]} maxFontSizeMultiplier={maxFontSizeMultiplier}>
         {word.toUpperCase()}
       </Animated.Text>

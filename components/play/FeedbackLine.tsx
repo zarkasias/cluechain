@@ -8,6 +8,8 @@ export type Feedback =
   | { kind: 'near' }
   | { kind: 'correct'; word: string }
   | { kind: 'hint'; cost: number }
+  /** Tutorial only: the tiles now show the whole answer. */
+  | { kind: 'answer' }
   | null;
 
 const WRONG_COPY = ['Not quite — try again.', 'Nope, keep going!', 'Not that one.'];
@@ -23,6 +25,8 @@ export function feedbackMessage(feedback: Feedback): string {
       return `Nice! ${feedback.word.toUpperCase()} joins the chain.`;
     case 'hint':
       return `Hint used: −${feedback.cost}`;
+    case 'answer':
+      return "Here's the answer. Type it in!";
   }
 }
 
@@ -31,6 +35,7 @@ const ICONS = {
   near: { Icon: Sparkles, tint: color.gold },
   correct: { Icon: Check, tint: color.success },
   hint: { Icon: Lightbulb, tint: color.gold },
+  answer: { Icon: Lightbulb, tint: color.gold },
 } as const;
 
 /** A fixed-height line between the card and the input, announced to screen readers. */

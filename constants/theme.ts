@@ -29,6 +29,9 @@ export const color = {
   white: '#FFFFFF',
   shadow: 'rgba(0,0,0,0.25)',
   scrim: 'rgba(0,0,0,0.5)',
+  scrimStrong: 'rgba(14,24,48,0.82)', // tutorial dim (bgDeep at 82%)
+  landingScrim: 'rgba(14,24,48,0.85)', // §6 landing gradient end
+  transparent: 'rgba(14,24,48,0)', // §6 landing gradient start
   hairline: 'rgba(255,255,255,0.06)',
 } as const;
 

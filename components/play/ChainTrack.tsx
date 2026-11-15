@@ -10,21 +10,25 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Eye } from 'lucide-react-native';
 import { answerLetters } from '@/lib/game';
-import type { Chain, LinkState } from '@/lib/game';
+import type { Link, LinkState } from '@/lib/game';
 import { useReduceMotion } from '@/context/GameContext';
 import { color, radius, space } from '@/constants/theme';
 
+type SlotLink = Pick<LinkState, 'solved' | 'revealed'>;
+
 type ChainTrackProps = {
-  chain: Chain;
-  links: LinkState[];
+  chain: { links: readonly Link[] };
+  links: readonly SlotLink[];
   /** Index of the current link, or -1 when the chain is complete. */
   currentIndex: number;
+  /** Total slots to draw. Slots past `chain.links` are placeholders showing "?" (the tutorial's 2-link chain). */
+  slots?: number;
 };
 
 type SlotState = 'solved' | 'revealed' | 'current' | 'future';
 
-function slotState(link: LinkState, index: number, currentIndex: number): SlotState {
-  if (link.solved) return link.revealed ? 'revealed' : 'solved';
+function slotState(link: SlotLink | undefined, index: number, currentIndex: number): SlotState {
+  if (link?.solved) return link.revealed ? 'revealed' : 'solved';
   return index === currentIndex ? 'current' : 'future';
 }
 
@@ -71,7 +75,7 @@ function Connector({ filled }: { filled: boolean }) {
 }
 
 const ChainTrack = forwardRef<ChainTrackHandle, ChainTrackProps>(function ChainTrack(
-  { chain, links, currentIndex },
+  { chain, links, currentIndex, slots = chain.links.length },
   ref,
 ) {
   const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
@@ -107,8 +111,9 @@ const ChainTrack = forwardRef<ChainTrackHandle, ChainTrackProps>(function ChainT
   useEffect(scrollToCurrent, [currentIndex]);
 
   const solvedWords = chain.links.filter((_, i) => links[i]?.solved).map((l) => l.answer);
+  const total = Math.max(slots, chain.links.length);
   const label =
-    `Chain progress: ${solvedWords.length} of ${links.length} solved.` +
+    `Chain progress: ${solvedWords.length} of ${total} solved.` +
     (solvedWords.length ? ` ${solvedWords.map((w) => w[0].toUpperCase() + w.slice(1)).join(', ')}.` : '');
 
   return (
@@ -122,10 +127,11 @@ const ChainTrack = forwardRef<ChainTrackHandle, ChainTrackProps>(function ChainT
         // Slots change width as they fill; keep the end in view once the chain is complete.
         onContentSizeChange={() => currentIndex < 0 && scrollRef.current?.scrollToEnd({ animated: true })}
       >
-        {chain.links.map((link, i) => {
+        {Array.from({ length: total }, (_, i) => {
+          const link: Link | undefined = chain.links[i];
           const state = slotState(links[i], i, currentIndex);
-          const word = link.answer.toUpperCase();
-          const count = answerLetters(link).length;
+          const word = link ? link.answer.toUpperCase() : '';
+          const count = link ? answerLetters(link).length : '?';
           return (
             <View
               key={i}
@@ -135,7 +141,7 @@ const ChainTrack = forwardRef<ChainTrackHandle, ChainTrackProps>(function ChainT
                 const offset = i > 0 ? CONNECTOR_WIDTH : 0;
                 slotX.current[i] = e.nativeEvent.layout.x + offset;
                 slotW.current[i] = e.nativeEvent.layout.width - offset;
-                if (i === currentIndex || (currentIndex < 0 && i === links.length - 1)) scrollToCurrent();
+                if (i === currentIndex || (currentIndex < 0 && i === total - 1)) scrollToCurrent();
               }}
             >
               {i > 0 && <Connector filled={!!links[i - 1]?.solved} />}

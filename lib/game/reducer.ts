@@ -278,7 +278,10 @@ export function createReducer(chains: Chain[]) {
         return startChain(state, action.id);
 
       case 'TICK':
-        if (state.chainId === null || isChainComplete(state) || action.ms <= 0) return state;
+        // The tutorial covers the Play tab; it must not add time to the real chain.
+        if (state.chainId === null || isChainComplete(state) || action.ms <= 0 || !state.settings.seenTutorial) {
+          return state;
+        }
         return { ...state, elapsedMs: state.elapsedMs + action.ms };
 
       case 'HYDRATE':
@@ -286,6 +289,9 @@ export function createReducer(chains: Chain[]) {
 
       case 'COMPLETE_TUTORIAL':
         return { ...state, settings: { ...state.settings, seenTutorial: true } };
+
+      case 'REPLAY_TUTORIAL':
+        return { ...state, settings: { ...state.settings, seenTutorial: false } };
 
       default:
         return state;
