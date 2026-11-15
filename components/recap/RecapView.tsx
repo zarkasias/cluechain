@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { AccessibilityInfo, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { announce } from '@/lib/announce';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowRight, Share2, Star, Trophy } from 'lucide-react-native';
@@ -61,7 +62,7 @@ function ChainRecap({ chain, chainNumber, result, completion, onNext, onReplay, 
   const bonus = result.score - linkTotal;
 
   useEffect(() => {
-    AccessibilityInfo.announceForAccessibility(
+    announce(
       `Chain complete. ${result.stars} of 3 stars. ${result.score} points. Time ${formatDuration(result.timeMs)}.`,
     );
   }, [result]);

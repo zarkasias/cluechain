@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react';
-import { AccessibilityInfo, Keyboard, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Keyboard, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { announce } from '@/lib/announce';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGameDispatch, useReduceMotion } from '@/context/GameContext';
@@ -188,6 +189,7 @@ export default function TutorialScreen() {
     if (lastOutcome === null) return;
     if (lastOutcome === 'correct') {
       const index = state.linkIndex - 1;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- responding to the tutorial reducer's verdict
       setFeedback({ kind: 'correct', word: tutorialLinks[index].answer });
       setTone('correct');
       haptics.success();
@@ -212,7 +214,7 @@ export default function TutorialScreen() {
     if (busy) return;
     const s = STEPS[step];
     const clue = done ? '' : ` Clue: ${clueText(tutorialLinks[state.linkIndex].clue)}`;
-    AccessibilityInfo.announceForAccessibility(`Tutorial step ${step} of ${TOTAL_STEPS}. ${s.title}. ${s.body}${clue}`);
+    announce(`Tutorial step ${step} of ${TOTAL_STEPS}. ${s.title}. ${s.body}${clue}`);
     if (!done) {
       const t = setTimeout(() => inputRef.current?.focus(), 50);
       return () => clearTimeout(t);

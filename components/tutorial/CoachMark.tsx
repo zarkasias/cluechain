@@ -130,12 +130,13 @@ export default function CoachMark({
         <Animated.View
           key={step}
           entering={fade}
-          style={[styles.bubbleWrap, { top, opacity: bubbleH ? 1 : 0 }]}
+          style={[styles.bubbleWrap, { top }]}
           // Without a button, let touches through to the UI under the bubble.
           pointerEvents={action ? 'box-none' : 'none'}
         >
           <View
-            style={styles.bubble}
+            // Hidden until measured, so it never flashes in the wrong place.
+            style={[styles.bubble, { opacity: bubbleH ? 1 : 0 }]}
             onLayout={(e) => setBubbleH(e.nativeEvent.layout.height)}
             accessible={!action}
             accessibilityLiveRegion="polite"

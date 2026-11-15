@@ -19,5 +19,5 @@ Read `CLAUDE.md`, `docs/DESIGN_SPEC.md` §4 and `docs/GAME_RULES.md` (scoring, s
 
 ## Verify
 - Run `npx tsc --noEmit` and `npm test`.
-- Take screenshots (390×844 and 360×740) in `docs/screenshots/phase-04/`: a perfect run, a run with hints, a reveal and misses, a replay, and the all-complete state. Check them against §4.
+- Check at 390×844 and 360×740 against §4: a perfect run, a run with hints, a reveal and misses, a replay, and the all-complete state. Don't save screenshots to the repo.
 - Commit: `phase 04: recap screen and share`.

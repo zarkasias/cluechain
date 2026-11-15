@@ -14,5 +14,5 @@ Read `CLAUDE.md`, `docs/DESIGN_SPEC.md` §8 and `docs/GAME_RULES.md` (Stats, str
 
 ## Verify
 - Run `npx tsc --noEmit` and `npm test`. Add a test that the streak display is 0 after a gap.
-- Seed storage with a test save (3 completed chains, one perfect, a streak of 2), then take screenshots in `docs/screenshots/phase-06/`. Also screenshot the empty state.
+- Seed storage with a test save (3 completed chains, one perfect, a streak of 2) and check the Stats tab, and also the empty state. Don't save screenshots to the repo.
 - Commit: `phase 06: stats and history`.

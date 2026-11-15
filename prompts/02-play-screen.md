@@ -28,7 +28,7 @@ Goal: rebuild the Play tab to match `DESIGN_SPEC.md` §2. The carry-over animati
 
 ## Verify
 - Run `npx tsc --noEmit`, `npm test` and `npm run build:web`.
-- Serve `dist/` and take screenshots at 390×844 (use Playwright if it's available; otherwise describe what you checked): link 1, a wrong guess, a near miss, 2 hints, link 3 mid-chain, the Reveal confirm sheet, and the Restart confirm sheet. Save them to `docs/screenshots/phase-02/` and look at them critically against the spec. Fix anything that doesn't match before you finish.
+- Serve `dist/` and check at 390×844 in a browser: link 1, a wrong guess, a near miss, 2 hints, link 3 mid-chain, the Reveal confirm sheet, and the Restart confirm sheet. Compare them critically against the spec and fix anything that doesn't match before you finish. Don't save screenshots to the repo.
 - Commit: `phase 02: new play screen (chain track, clue card, tiles, feedback, actions)`.
 
 Finish with a summary and any spec deviations.

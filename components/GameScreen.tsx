@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, AppState, LayoutChangeEvent, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { AppState, LayoutChangeEvent, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { announce } from '@/lib/announce';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChains, useGameDispatch, useGameState, useReduceMotion } from '@/context/GameContext';
@@ -81,7 +82,9 @@ export default function GameScreen() {
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   const transitionRef = useRef(transition);
-  transitionRef.current = transition;
+  useLayoutEffect(() => {
+    transitionRef.current = transition;
+  }, [transition]);
   const busy = transition !== null;
   const shownIndex = transition && !transition.swapped ? transition.index : linkIndex;
   const showCompletion = complete && !transition;
@@ -109,9 +112,9 @@ export default function GameScreen() {
     setTransition(null);
     setAnswer('');
     setTone(null);
-    contentOpacity.value = 1;
-    cardOpacity.value = 1;
-    cardY.value = 0;
+    contentOpacity.set(1);
+    cardOpacity.set(1);
+    cardY.set(0);
   }, [contentOpacity, cardOpacity, cardY]);
 
   /** Measure the tiles and the target slot, then launch the ghost chip (§3 step 2). */
@@ -199,11 +202,14 @@ export default function GameScreen() {
   }, [endCarryOver]);
 
   // React to the reducer's verdict. Layout effect so the next link never flashes before the hold.
+  // The verdict comes from the reducer (components never judge answers), so this effect is
+  // the one place that turns it into feedback, haptics and the carry-over.
   useLayoutEffect(() => {
     if (!chain || lastOutcome === null) return;
     if (lastOutcome === 'correct') {
       const index = complete ? linkIndex : linkIndex - 1;
       const solved = chain.links[index];
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- responding to the reducer's verdict
       setFeedback({ kind: 'correct', word: solved.answer });
       setTone('correct');
       haptics.success();
@@ -225,7 +231,7 @@ export default function GameScreen() {
   // Announce each new link to screen readers, and focus the input on every platform.
   useEffect(() => {
     if (!chain || busy || complete) return;
-    AccessibilityInfo.announceForAccessibility(
+    announce(
       `Link ${linkIndex + 1} of 5. ${clueText(chain.links[linkIndex].clue)}`,
     );
     const t = setTimeout(focusInput, 50);

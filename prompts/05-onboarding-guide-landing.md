@@ -19,5 +19,5 @@ Read `CLAUDE.md` and `docs/DESIGN_SPEC.md` §5, §6 and §7. Phases 01–04 are 
 
 ## Verify
 - Run `npx tsc --noEmit` and `npm test`.
-- Clear storage (on web, `localStorage.clear()`), then take screenshots in `docs/screenshots/phase-05/`: the landing page (fresh and with progress), each tutorial step, and the Guide tab. Confirm Skip works and the tutorial never shows twice.
+- Clear storage (on web, `localStorage.clear()`), then check the landing page (fresh and with progress), each tutorial step, and the Guide tab. Confirm Skip works and the tutorial never shows twice. Don't save screenshots to the repo.
 - Commit: `phase 05: onboarding, guide, landing`.

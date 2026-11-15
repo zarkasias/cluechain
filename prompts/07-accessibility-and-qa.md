@@ -20,7 +20,7 @@ Write `docs/QA_CHECKLIST.md`, then execute it. Record pass/fail for each item:
 - Run `npx tsc --noEmit`, `npm test`, `npm run validate:chains` and `npm run build:web`, and do a final lint (`npm run lint`).
 
 ## 3. Visual QA
-Take a final screenshot set at 390×844 and 360×740 for every screen and state into `docs/screenshots/final/`, and build a contact sheet image. Review it as a designer: spacing rhythm, alignment, type hierarchy, colour consistency. Fix the issues you find.
+Check every screen and state at 390×844 and 360×740 as a designer: spacing rhythm, alignment, type hierarchy, colour consistency. Fix the issues you find. Don't save screenshots to the repo.
 
 ## 4. Wrap up
 - Update `docs/UX_REVIEW.md` with a "Status" column (Done / Partial / Deferred) for every item.

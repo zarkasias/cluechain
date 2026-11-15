@@ -8,6 +8,7 @@ import Animated, {
 import { answerWords } from '@/lib/game';
 import type { Link } from '@/lib/game';
 import type { Rect } from './ChainTrack';
+import { GAP, tileLayout, WORD_GAP } from './tileLayout';
 import { useReduceMotion } from '@/context/GameContext';
 import { color, motion, radius, space } from '@/constants/theme';
 
@@ -22,17 +23,7 @@ type LetterTilesProps = {
   maxSize?: number;
 };
 
-const GAP = 6;
-const WORD_GAP = 16;
 const STAGGER_MS: Record<'correct' | 'revealed', number> = { correct: 30, revealed: 60 };
-
-/** Tile size = min(max, floor((width − gaps) / letters)). Exported for tests/layout checks. */
-export function tileSize(width: number, words: string[], max = 44): number {
-  const letters = words.reduce((n, w) => n + w.length, 0);
-  if (!letters || width <= 0) return max;
-  const gaps = (letters - words.length) * GAP + (words.length - 1) * WORD_GAP;
-  return Math.max(12, Math.min(max, Math.floor((width - gaps) / letters)));
-}
 
 type TileProps = { letter: string; shown: boolean; tone: 'empty' | 'hinted' | 'correct'; size: number };
 
@@ -89,21 +80,20 @@ const LetterTiles = forwardRef<LetterTilesHandle, LetterTilesProps>(function Let
   const words = answerWords(link);
   const total = words.reduce((n, w) => n + w.length, 0);
   const [width, setWidth] = useState(0);
-  const [filled, setFilled] = useState(0);
   const reduceMotion = useReduceMotion();
+  const [filled, setFilled] = useState(fill && reduceMotion ? total : 0);
+
+  // Reset when the fill changes (adjusting state during render, not in an effect).
+  const [prevFill, setPrevFill] = useState(fill);
+  if (fill !== prevFill) {
+    setPrevFill(fill);
+    setFilled(fill && reduceMotion ? total : 0);
+  }
 
   // Staggered fill for a solve or a reveal.
   useEffect(() => {
-    if (!fill) {
-      setFilled(0);
-      return;
-    }
-    if (reduceMotion) {
-      setFilled(total);
-      return;
-    }
+    if (!fill || reduceMotion) return;
     let n = 0;
-    setFilled(0);
     const id = setInterval(() => {
       n += 1;
       setFilled(n);
@@ -112,7 +102,7 @@ const LetterTiles = forwardRef<LetterTilesHandle, LetterTilesProps>(function Let
     return () => clearInterval(id);
   }, [fill, total, reduceMotion]);
 
-  const size = tileSize(width, words, maxSize);
+  const { size, rows } = tileLayout(width, words, maxSize);
   const hinted = words.join('').slice(0, hintLetters);
   const a11y =
     `Answer, ${total} letters.` + (hinted ? ` Revealed: ${hinted.split('').join(' ')}` : '');
@@ -126,15 +116,19 @@ const LetterTiles = forwardRef<LetterTilesHandle, LetterTilesProps>(function Let
       accessible
       accessibilityLabel={a11y}
     >
-      {words.map((word, wi) => (
-        <View key={wi} style={styles.word} importantForAccessibility="no-hide-descendants">
-          {word.split('').map((letter, li) => {
-            const i = index++;
-            const isHinted = i < hintLetters;
-            const isFilled = fill !== null && i < filled;
-            const tone = isFilled ? (fill === 'correct' ? 'correct' : 'hinted') : isHinted ? 'hinted' : 'empty';
-            return <Tile key={li} letter={letter} shown={isHinted || isFilled} tone={tone} size={size} />;
-          })}
+      {rows.map((row, ri) => (
+        <View key={ri} style={styles.line}>
+          {row.map((word, wi) => (
+            <View key={wi} style={styles.word} importantForAccessibility="no-hide-descendants">
+              {word.split('').map((letter, li) => {
+                const i = index++;
+                const isHinted = i < hintLetters;
+                const isFilled = fill !== null && i < filled;
+                const tone = isFilled ? (fill === 'correct' ? 'correct' : 'hinted') : isHinted ? 'hinted' : 'empty';
+                return <Tile key={li} letter={letter} shown={isHinted || isFilled} tone={tone} size={size} />;
+              })}
+            </View>
+          ))}
         </View>
       ))}
     </View>
@@ -146,6 +140,9 @@ export default LetterTiles;
 const styles = StyleSheet.create({
   row: {
     paddingTop: space.xs,
+    rowGap: GAP,
+  },
+  line: {
     flexDirection: 'row',
     justifyContent: 'center',
     columnGap: WORD_GAP,

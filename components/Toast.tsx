@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { AccessibilityInfo, StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
+import { announce } from '@/lib/announce';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { useReduceMotion } from '@/context/GameContext';
 import { color, motion, radius, space } from '@/constants/theme';
@@ -14,21 +15,22 @@ type ToastProps = {
 /** A small pill at the bottom of its container that fades in, holds, then fades out. */
 export default function Toast({ message, showKey, durationMs = 1600 }: ToastProps) {
   const reduceMotion = useReduceMotion();
-  const [visible, setVisible] = useState(false);
+  // The toast shows for `showKey` until the key it last hid matches.
+  const [hiddenKey, setHiddenKey] = useState(0);
+  const visible = showKey !== 0 && hiddenKey !== showKey;
   const opacity = useSharedValue(0);
   const y = useSharedValue(0);
 
   useEffect(() => {
     if (showKey === 0) return;
-    setVisible(true);
-    AccessibilityInfo.announceForAccessibility(message);
+    announce(message);
     const fadeIn = reduceMotion ? motion.fast : motion.base;
     opacity.value = 0;
     y.value = reduceMotion ? 0 : 8;
     opacity.value = withTiming(1, { duration: fadeIn });
     y.value = withTiming(0, { duration: fadeIn });
     opacity.value = withDelay(durationMs, withTiming(0, { duration: motion.base }));
-    const t = setTimeout(() => setVisible(false), durationMs + motion.base);
+    const t = setTimeout(() => setHiddenKey(showKey), durationMs + motion.base);
     return () => clearTimeout(t);
   }, [showKey, message, durationMs, reduceMotion, opacity, y]);
 

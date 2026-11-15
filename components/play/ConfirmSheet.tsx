@@ -37,10 +37,12 @@ export default function ConfirmSheet({
   const [mounted, setMounted] = useState(visible);
   const progress = useSharedValue(0);
 
+  // Mount as soon as it opens (during render); unmount after the closing animation.
+  if (visible && !mounted) setMounted(true);
+
   useEffect(() => {
     const duration = reduceMotion ? motion.fast : motion.base;
     if (visible) {
-      setMounted(true);
       progress.value = withTiming(1, { duration, easing: Easing.out(Easing.cubic) });
     } else if (mounted) {
       progress.value = withTiming(0, { duration });

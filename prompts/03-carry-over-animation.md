@@ -21,5 +21,5 @@ On web, the ghost chip uses the same code. Confirm it works in Chrome at 390×84
 
 ## Verify
 - Run `npx tsc --noEmit` and `npm test`.
-- Record proof: capture 6–8 frames (screenshots at 0, 200, 400, 600, 800 and 1000 ms after submit) into `docs/screenshots/phase-03/` and check that the chip travels from the tiles to the correct slot. Do it for link 1→2 and for link 4→5 (when the track has scrolled).
+- Check that the chip travels from the tiles to the correct slot, for link 1→2 and for link 4→5 (when the track has scrolled). Don't save screenshots to the repo.
 - Commit: `phase 03: carry-over animation`.

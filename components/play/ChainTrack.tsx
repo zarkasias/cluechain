@@ -107,7 +107,6 @@ const ChainTrack = forwardRef<ChainTrackHandle, ChainTrackProps>(function ChainT
       }),
   }));
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(scrollToCurrent, [currentIndex]);
 
   const solvedWords = chain.links.filter((_, i) => links[i]?.solved).map((l) => l.answer);

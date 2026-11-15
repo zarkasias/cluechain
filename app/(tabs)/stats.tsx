@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import type { LucideIcon } from 'lucide-react-native';
 import { ChevronRight, Eye, Flame, Lightbulb, Link, Play, Star, Timer, Trophy } from 'lucide-react-native';
 import { useChains, useGameDispatch, useGameState } from '@/context/GameContext';
@@ -104,11 +104,14 @@ export default function StatsScreen() {
   const dispatch = useGameDispatch();
   const insets = useSafeAreaInsets();
   const [replaying, setReplaying] = useState<HistoryRow | null>(null);
+  // Today, refreshed whenever the tab is shown (the streak depends on it).
+  const [today, setToday] = useState(() => localDayISO(Date.now()));
+  useFocusEffect(useCallback(() => setToday(localDayISO(Date.now())), []));
 
   const { stats, history } = state;
   const rows = historyRows(chains, history);
   const empty = stats.chainsCompleted === 0 && rows.length === 0;
-  const streak = displayStreak(stats, localDayISO(Date.now()));
+  const streak = displayStreak(stats, today);
   const average = averageTimeMs(stats);
   const playing = chainInProgress(chains, state);
 

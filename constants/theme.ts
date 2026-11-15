@@ -1,7 +1,6 @@
 import type { TextStyle } from 'react-native';
 
-// Design tokens from docs/DESIGN_SPEC.md §1. Phase 02 migrates components from
-// constants/Colors.ts to these.
+// Design tokens from docs/DESIGN_SPEC.md §1.
 
 export const color = {
   bg: '#15233D', // app background (existing primary)

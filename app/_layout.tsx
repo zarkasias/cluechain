@@ -5,7 +5,7 @@ import { Slot } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { GameProvider, useGameState } from '@/context/GameContext';
-import { Colors } from '@/constants/Colors';
+import { color } from '@/constants/theme';
 
 import './styles/global.css';
 
@@ -22,7 +22,7 @@ function AppShell({ fontsLoaded }: { fontsLoaded: boolean }) {
   if (!ready) return null;
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.primary }}>
+    <View style={{ flex: 1, backgroundColor: color.bg }}>
       <StatusBar style="light" />
       <Slot />
     </View>
@@ -39,6 +39,13 @@ export default function RootLayout() {
     if (Platform.OS === 'web') {
       document.body.style.backgroundColor = 'transparent';
       document.documentElement.style.backgroundColor = 'transparent';
+      // A visible keyboard focus ring (DESIGN_SPEC §10), in the focus token colour.
+      const style = document.createElement('style');
+      style.textContent =
+        `[role="button"]:focus-visible, [role="link"]:focus-visible, [role="tab"]:focus-visible, a:focus-visible ` +
+        `{ outline: 3px solid ${color.focus}; outline-offset: 2px; }`;
+      document.head.appendChild(style);
+      return () => style.remove();
     }
   }, []);
 
