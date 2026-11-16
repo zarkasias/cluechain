@@ -1,5 +1,5 @@
 import React from 'react';
-import { ImageBackground, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -26,7 +26,13 @@ export default function LandingPage() {
   const label = resume ? `Continue chain ${resume.chainNumber}` : 'Play';
 
   return (
-    <ImageBackground source={require('@/assets/images/launchscreen.jpg')} style={styles.background} resizeMode="cover">
+    <View style={styles.background}>
+      <Image
+        source={require('@/assets/images/launchscreen.jpg')}
+        style={StyleSheet.absoluteFill}
+        resizeMode="cover"
+        accessible={false}
+      />
       <LinearGradient
         colors={[color.transparent, color.landingScrim]}
         locations={[0.3, 0.75]}
@@ -54,7 +60,7 @@ export default function LandingPage() {
           </Pressable>
         </View>
       </View>
-    </ImageBackground>
+    </View>
   );
 }
 

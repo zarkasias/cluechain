@@ -1,0 +1,242 @@
+[
+  { "id": "starter-easy-01", "title": "Frog to Pillow", "difficulty": "easy", "theme": "animals",
+    "links": [
+      { "clue": "Green hopping animal that says ribbit", "answer": "frog" },
+      { "clue": "A {FROG} sits on a lily pad in this small pool of water", "answer": "pond" },
+      { "clue": "This bird quacks as it paddles across the {POND}", "answer": "duck" },
+      { "clue": "A {DUCK} is covered in these soft, light things", "answer": "feather", "accept": ["down"] },
+      { "clue": "Soft {FEATHERS} are stuffed inside this, where you rest your head at night", "answer": "pillow", "accept": ["cushion"] }
+    ] },
+  { "id": "starter-easy-02", "title": "Seed to Bear", "difficulty": "easy", "theme": "garden",
+    "links": [
+      { "clue": "Plant this tiny thing in the soil and it grows", "answer": "seed" },
+      { "clue": "A {SEED} grows into this colorful plant with petals", "answer": "flower" },
+      { "clue": "This buzzing insect visits each {FLOWER} to sip its nectar", "answer": "bee" },
+      { "clue": "A {BEE} makes this sweet, sticky food in its hive", "answer": "honey" },
+      { "clue": "This big furry animal loves to dip its paw into {HONEY}", "answer": "bear" }
+    ] },
+  { "id": "starter-medium-01", "title": "Pepper to Hello", "difficulty": "medium", "theme": "food",
+    "links": [
+      { "clue": "Black spice ground over food that can make you sneeze", "answer": "pepper" },
+      { "clue": "{PEPPER} sits beside this white seasoning in a pair of shakers", "answer": "salt" },
+      { "clue": "The water in this is full of {SALT}, unlike a lake", "answer": "sea", "accept": ["ocean"] },
+      { "clue": "Out at {SEA}, the wind whips up these rolling walls of water", "answer": "wave" },
+      { "clue": "A friendly {WAVE} of your hand says this", "answer": "hello", "accept": ["hi", "goodbye", "bye"] }
+    ] },
+  { "id": "starter-easy-03", "title": "Key to Chimney", "difficulty": "easy", "theme": "home",
+    "links": [
+      { "clue": "You turn this in a lock to open it", "answer": "key" },
+      { "clue": "Use a {KEY} to unlock this, then walk inside", "answer": "door" },
+      { "clue": "Knock on the front {DOOR} of this place where a family lives", "answer": "house", "accept": ["home"] },
+      { "clue": "This covers the top of a {HOUSE} and keeps the rain out", "answer": "roof" },
+      { "clue": "Smoke from the fireplace rises up this tall pipe on the {ROOF}", "answer": "chimney" }
+    ] },
+  { "id": "starter-medium-02", "title": "Squirrel to Fall", "difficulty": "medium", "theme": "nature",
+    "links": [
+      { "clue": "Bushy-tailed animal that scampers up trees", "answer": "squirrel" },
+      { "clue": "A {SQUIRREL} buries this little capped nut for winter", "answer": "acorn" },
+      { "clue": "A tiny {ACORN} grows into this mighty tree", "answer": "oak" },
+      { "clue": "These wavy-edged green things grow all over an {OAK} tree", "answer": "leaf", "accept": ["leaves"] },
+      { "clue": "Every {LEAF} drops in this season, named for what the leaves do", "answer": "fall", "accept": ["autumn"] }
+    ] },
+  { "id": "starter-hard-01", "title": "Bird to Index", "difficulty": "hard", "theme": "sayings",
+    "links": [
+      { "clue": "In the saying, the early one of these catches the worm", "answer": "bird" },
+      { "clue": "A {BIRD} in this is worth two elsewhere, says the proverb", "answer": "hand" },
+      { "clue": "A bird in the {HAND} is worth two in this", "answer": "bush" },
+      { "clue": "To beat around the {BUSH} is to avoid getting to this", "answer": "point" },
+      { "clue": "You {POINT} with this finger, which is also the list at the back of a book", "answer": "index" }
+    ] },
+  { "id": "starter-easy-04", "title": "Apple to Spoon", "difficulty": "easy", "theme": "food",
+    "links": [
+      { "clue": "Red or green fruit that keeps the doctor away", "answer": "apple" },
+      { "clue": "Warm {APPLE} slices are baked inside this pastry dessert", "answer": "pie", "accept": ["tart"] },
+      { "clue": "You bake a {PIE} inside this hot box", "answer": "oven" },
+      { "clue": "The {OVEN} lives in this room where meals are cooked", "answer": "kitchen" },
+      { "clue": "Grab this from the {KITCHEN} drawer to stir your soup", "answer": "spoon", "accept": ["ladle"] }
+    ] },
+  { "id": "starter-medium-03", "title": "Clock to Lightning", "difficulty": "medium", "theme": "weather",
+    "links": [
+      { "clue": "It ticks on the wall and tells you the time", "answer": "clock" },
+      { "clue": "A {CLOCK} has a face and two of these pointers", "answer": "hands" },
+      { "clue": "Smack your {HANDS} together to do this after a show", "answer": "clap", "accept": ["applaud"] },
+      { "clue": "A loud {CLAP} of this booms during a storm", "answer": "thunder" },
+      { "clue": "{THUNDER} rumbles after a bright flash of this", "answer": "lightning" }
+    ] },
+  { "id": "starter-hard-02", "title": "Jam to Play", "difficulty": "hard", "theme": "sayings",
+    "links": [
+      { "clue": "Fruit spread for toast, or what too many cars cause on a busy road", "answer": "jam" },
+      { "clue": "A {JAM} on the highway is made of this", "answer": "traffic" },
+      { "clue": "{TRAFFIC} stops when this turns red", "answer": "light", "accept": ["signal", "stoplight"] },
+      { "clue": "Many hands make {LIGHT} this, says the proverb", "answer": "work" },
+      { "clue": "All {WORK} and no this makes Jack a dull boy", "answer": "play", "accept": ["fun"] }
+    ] },
+  { "id": "starter-easy-05", "title": "Cheese to Yarn", "difficulty": "easy", "theme": "animals",
+    "links": [
+      { "clue": "Yellow food made from milk, sometimes full of holes", "answer": "cheese" },
+      { "clue": "This small squeaky animal loves to nibble {CHEESE}", "answer": "mouse" },
+      { "clue": "A {MOUSE} runs and hides when this furry pet comes to chase it", "answer": "cat" },
+      { "clue": "A baby {CAT} is called this", "answer": "kitten", "accept": ["kitty"] },
+      { "clue": "A playful {KITTEN} loves to bat at a ball of this", "answer": "yarn", "accept": ["wool", "string"] }
+    ] },
+  { "id": "starter-medium-04", "title": "Alphabet to Photo", "difficulty": "medium", "theme": "school",
+    "links": [
+      { "clue": "A, B, C and all the rest, in order", "answer": "alphabet" },
+      { "clue": "Each part of the {ALPHABET}, like Q or Z, is one of these", "answer": "letter" },
+      { "clue": "Stick this little paper square on a {LETTER} before you mail it", "answer": "stamp" },
+      { "clue": "Collectors keep each {STAMP} neatly in this kind of book", "answer": "album", "accept": ["scrapbook"] },
+      { "clue": "Grandma's family {ALBUM} is full of these old snapshots", "answer": "photo", "accept": ["photograph", "picture"] }
+    ] },
+  { "id": "starter-hard-03", "title": "Date to Sundae", "difficulty": "hard", "theme": "food",
+    "links": [
+      { "clue": "Sweet brown palm fruit, or a day like your birthday", "answer": "date" },
+      { "clue": "Circle a {DATE} on this to remember it", "answer": "calendar", "accept": ["diary", "planner"] },
+      { "clue": "A {CALENDAR} year is split into twelve of these", "answer": "month" },
+      { "clue": "A {MONTH} of these means a very long time, says an old phrase", "answer": "sunday" },
+      { "clue": "This ice cream treat sounds exactly like {SUNDAY}", "answer": "sundae" }
+    ] },
+  { "id": "starter-medium-05", "title": "Comet to Syrup", "difficulty": "medium", "theme": "space",
+    "links": [
+      { "clue": "Icy space rock that streaks past the sun with a glowing trail", "answer": "comet" },
+      { "clue": "A {COMET} streams a long glowing one of these behind it", "answer": "tail" },
+      { "clue": "Call heads or {TAILS} before tossing this", "answer": "coin" },
+      { "clue": "You flip a {COIN}, and you also flip this flat breakfast in a pan", "answer": "pancake", "accept": ["crepe", "flapjack", "hotcake"] },
+      { "clue": "A stack of {PANCAKES} is drenched in this sweet maple topping", "answer": "syrup" }
+    ] },
+  { "id": "starter-easy-06", "title": "Cloud to Feet", "difficulty": "easy", "theme": "weather",
+    "links": [
+      { "clue": "Fluffy white shape floating in the sky", "answer": "cloud" },
+      { "clue": "Gray {CLOUDS} drop this wet weather on us", "answer": "rain" },
+      { "clue": "After the {RAIN}, jump in this little pool of water on the ground", "answer": "puddle" },
+      { "clue": "Pull on these rubber shoes to splash in a {PUDDLE}", "answer": "boots", "accept": ["wellies", "galoshes", "rainboots"] },
+      { "clue": "Your {BOOTS} go on these, one at the end of each leg", "answer": "feet", "accept": ["foot"] }
+    ] },
+  { "id": "starter-hard-04", "title": "Spring to Stumble", "difficulty": "hard", "theme": "wordplay",
+    "links": [
+      { "clue": "This season comes after winter, and it's also a bouncy metal coil", "answer": "spring" },
+      { "clue": "Someone who's no {SPRING} one of these isn't young anymore", "answer": "chicken" },
+      { "clue": "Why did the {CHICKEN} cross this? To get to the other side!", "answer": "road", "accept": ["street"] },
+      { "clue": "Pack snacks and hit the open {ROAD} on this family adventure", "answer": "trip", "accept": ["journey"] },
+      { "clue": "To {TRIP} means to take a journey, or to do this over your own feet", "answer": "stumble", "accept": ["fall", "tumble"] }
+    ] },
+  { "id": "starter-medium-06", "title": "Octopus to Bank", "difficulty": "medium", "theme": "animals",
+    "links": [
+      { "clue": "Sea creature with eight arms", "answer": "octopus" },
+      { "clue": "An {OCTOPUS} squirts a cloud of this dark liquid to escape", "answer": "ink" },
+      { "clue": "Fill this writing tool with {INK} and sign your name", "answer": "pen", "accept": ["quill"] },
+      { "clue": "On a farm, a muddy {PEN} is home to this oinking animal", "answer": "pig", "accept": ["hog"] },
+      { "clue": "Drop your coins into a china {PIG}, also called a piggy this", "answer": "bank" }
+    ] },
+  { "id": "starter-hard-05", "title": "Star to Port", "difficulty": "hard", "theme": "space",
+    "links": [
+      { "clue": "This shape with five points also shines in the night sky", "answer": "star" },
+      { "clue": "In the nursery rhyme, the little {STAR} does this twice in a row", "answer": "twinkle" },
+      { "clue": "A {TWINKLE} in this means you're up to something playful", "answer": "eye" },
+      { "clue": "The calm center of a hurricane is the {EYE} of this", "answer": "storm" },
+      { "clue": "Any one of these in a {STORM}, says the saying about taking what help you can", "answer": "port", "accept": ["harbor", "harbour"] }
+    ] },
+  { "id": "starter-easy-07", "title": "Crab to King", "difficulty": "easy", "theme": "ocean",
+    "links": [
+      { "clue": "Sideways-walking sea creature with two big claws", "answer": "crab" },
+      { "clue": "A {CRAB} scuttles along this place by the sea where people swim and play", "answer": "beach", "accept": ["shore", "seashore"] },
+      { "clue": "The {BEACH} is covered in tiny golden grains of this", "answer": "sand" },
+      { "clue": "Kids build this, with towers and a moat, out of wet {SAND}", "answer": "castle", "accept": ["sandcastle"] },
+      { "clue": "A {CASTLE} is home to the queen and this ruler in a crown", "answer": "king" }
+    ] },
+  { "id": "starter-medium-07", "title": "Tennis to Gold", "difficulty": "medium", "theme": "sports",
+    "links": [
+      { "clue": "Sport where players hit a fuzzy yellow ball over a net", "answer": "tennis" },
+      { "clue": "In {TENNIS}, you hit the ball with this stringed paddle", "answer": "racket", "accept": ["racquet"] },
+      { "clue": "Making a {RACKET} means making lots of this", "answer": "noise", "accept": ["din"] },
+      { "clue": "The opposite of {NOISE}, when nobody makes a sound", "answer": "silence", "accept": ["quiet"] },
+      { "clue": "Speech is silver, but {SILENCE} is this, says the old proverb", "answer": "gold", "accept": ["golden"] }
+    ] },
+  { "id": "starter-hard-06", "title": "Bark to Space", "difficulty": "hard", "theme": "wordplay",
+    "links": [
+      { "clue": "A tree wears it, and a puppy does it", "answer": "bark" },
+      { "clue": "This pet's {BARK} is said to be worse than its bite", "answer": "dog" },
+      { "clue": "A {DOG} buries one in the yard, but your funny one is in your arm", "answer": "bone" },
+      { "clue": "Your funny {BONE} is really a spot on this bendy joint", "answer": "elbow" },
+      { "clue": "Asking for {ELBOW} room means you want more of this", "answer": "space" }
+    ] },
+  { "id": "starter-easy-08", "title": "Rocket to Hoot", "difficulty": "easy", "theme": "space",
+    "links": [
+      { "clue": "Astronauts blast off into space inside this", "answer": "rocket", "accept": ["spaceship", "shuttle"] },
+      { "clue": "A {ROCKET} took astronauts to walk on this, Earth's nearest neighbor in space", "answer": "moon" },
+      { "clue": "The {MOON} shines in the sky at this dark time", "answer": "night", "accept": ["nighttime"] },
+      { "clue": "This wise-looking bird stays awake all {NIGHT}", "answer": "owl" },
+      { "clue": "An {OWL} makes this sound from the treetops", "answer": "hoot", "accept": ["hoo", "whoo"] }
+    ] },
+  { "id": "starter-hard-07", "title": "Seal to Manners", "difficulty": "hard", "theme": "wordplay",
+    "links": [
+      { "clue": "Sea animal that claps its flippers, or what you do to close an envelope", "answer": "seal" },
+      { "clue": "Shake hands to {SEAL} this agreement", "answer": "deal", "accept": ["bargain"] },
+      { "clue": "When you {DEAL}, you hand these out to each player", "answer": "card" },
+      { "clue": "To be totally honest is to lay your {CARDS} on this", "answer": "table" },
+      { "clue": "Saying please and thank you at the {TABLE} shows good ones of these", "answer": "manners" }
+    ] },
+  { "id": "starter-medium-08", "title": "Bread to Hook", "difficulty": "medium", "theme": "nature",
+    "links": [
+      { "clue": "Bakers knead dough to make loaves of this", "answer": "bread" },
+      { "clue": "The hard outer edge of a slice of {BREAD}", "answer": "crust" },
+      { "clue": "We live on this planet, whose rocky outer layer is its {CRUST}", "answer": "earth" },
+      { "clue": "This wriggly creature tunnels through the {EARTH} in your garden", "answer": "worm", "accept": ["earthworm"] },
+      { "clue": "Anglers put a {WORM} on this curved bit of metal to catch fish", "answer": "hook" }
+    ] },
+  { "id": "starter-easy-09", "title": "Kite to Captain", "difficulty": "easy", "theme": "outdoors",
+    "links": [
+      { "clue": "You fly this on a long string on a breezy day", "answer": "kite" },
+      { "clue": "A {KITE} needs this moving air to fly", "answer": "wind", "accept": ["breeze"] },
+      { "clue": "The {WIND} fills this big cloth on a ship's mast", "answer": "sail" },
+      { "clue": "A {SAIL} catches the breeze to push this across the water", "answer": "boat", "accept": ["ship", "yacht", "sailboat"] },
+      { "clue": "This person is in charge of a {BOAT} and its crew", "answer": "captain", "accept": ["skipper"] }
+    ] },
+  { "id": "starter-hard-08", "title": "Bat to Drill", "difficulty": "hard", "theme": "sports",
+    "links": [
+      { "clue": "Animal that sleeps upside down, or the club you swing in baseball", "answer": "bat" },
+      { "clue": "This sport is played with a flat {BAT}, and it's also a chirping insect", "answer": "cricket" },
+      { "clue": "A game of {CRICKET} is one of these, and so is a stick that lights a candle", "answer": "match" },
+      { "clue": "Strike a {MATCH} to start this cozy blaze at a campsite", "answer": "fire", "accept": ["campfire"] },
+      { "clue": "A {FIRE} one of these is a practice where everyone calmly leaves the building", "answer": "drill" }
+    ] },
+  { "id": "starter-medium-09", "title": "Orchestra to Race", "difficulty": "medium", "theme": "music",
+    "links": [
+      { "clue": "Large group of musicians playing violins, flutes and drums together", "answer": "orchestra" },
+      { "clue": "This person waves a baton to lead an {ORCHESTRA}", "answer": "conductor" },
+      { "clue": "A {CONDUCTOR} might also check your ticket on this kind of transport", "answer": "train", "accept": ["tram", "bus"] },
+      { "clue": "A {TRAIN} runs along this path of metal rails", "answer": "track", "accept": ["railway", "railroad"] },
+      { "clue": "On the {TRACK}, runners line up for this, hoping to finish first", "answer": "race", "accept": ["sprint"] }
+    ] },
+  { "id": "starter-easy-10", "title": "Pencil to Sky", "difficulty": "easy", "theme": "travel",
+    "links": [
+      { "clue": "You write with this and fix mistakes with the eraser on its end", "answer": "pencil" },
+      { "clue": "Scribble with a {PENCIL} on a sheet of this", "answer": "paper" },
+      { "clue": "Fold a sheet of {PAPER} into this and throw it so it glides", "answer": "plane", "accept": ["airplane", "aeroplane"] },
+      { "clue": "This person flies a {PLANE}", "answer": "pilot" },
+      { "clue": "A {PILOT} flies high up in this, among the clouds", "answer": "sky" }
+    ] },
+  { "id": "starter-hard-09", "title": "Fiddle to Pool", "difficulty": "hard", "theme": "music",
+    "links": [
+      { "clue": "Another name for a violin, played at country dances", "answer": "fiddle" },
+      { "clue": "Someone healthy is said to be as this as a {FIDDLE}", "answer": "fit" },
+      { "clue": "Something that suits you perfectly will {FIT} like this", "answer": "glove" },
+      { "clue": "The {GLOVE} compartment is found at the front of this", "answer": "car" },
+      { "clue": "Neighbors who share one {CAR} to get to work form this kind of group", "answer": "pool", "accept": ["carpool"] }
+    ] },
+  { "id": "starter-medium-10", "title": "Bowling to Farmer", "difficulty": "medium", "theme": "sports",
+    "links": [
+      { "clue": "Roll a heavy ball down a lane to knock things over in this game", "answer": "bowling" },
+      { "clue": "In {BOWLING}, you try to knock down all ten of these", "answer": "pins", "accept": ["skittles"] },
+      { "clue": "Waiting nervously is being on {PINS} and these", "answer": "needle" },
+      { "clue": "Something hard to find is like a {NEEDLE} in this", "answer": "haystack", "accept": ["hay stack"] },
+      { "clue": "This person stacks up a {HAYSTACK} at harvest time", "answer": "farmer" }
+    ] },
+  { "id": "starter-hard-10", "title": "Crane to Party", "difficulty": "hard", "theme": "wordplay",
+    "links": [
+      { "clue": "Long-legged bird, or a tall machine that lifts steel beams", "answer": "crane" },
+      { "clue": "To {CRANE} this is to stretch it to see over a crowd", "answer": "neck" },
+      { "clue": "Around here is your {NECK} of these", "answer": "woods", "accept": ["wood"] },
+      { "clue": "If you go down to the {WOODS} today, you're sure of a big one of these", "answer": "surprise" },
+      { "clue": "At a {SURPRISE} one of these, friends jump out and shout", "answer": "party" }
+    ] }
+]
