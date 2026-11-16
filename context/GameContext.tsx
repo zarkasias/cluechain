@@ -1,226 +1,121 @@
-import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
+import React, { createContext, ReactNode, useContext, useEffect, useMemo, useReducer, useRef } from 'react';
+import { AppState } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { wordChains } from '@/data/wordChains';
+import { useFocusEffect } from 'expo-router';
+import { chains } from '@/data/chains';
+import { setHapticsEnabled } from '@/lib/haptics';
+import { createInitialState, createReducer, createSaver, loadSave, toSave } from '@/lib/game';
+import type { Chain, GameAction, GameState } from '@/lib/game';
 
-// Types
-type WordChain = {
-  id: string;
-  clues: string[];
-  answers: string[];
-};
+const reducer = createReducer(chains);
 
-type GameStats = {
-  chainsCompleted: number;
-  hintsUsed: number;
-  wordsGuessed: number;
-  bestTime: number | null;
-  totalPoints: number;
-};
+type GameContextValue = { state: GameState; dispatch: React.Dispatch<GameAction>; chains: Chain[] };
 
-type GameState = {
-  currentChain: WordChain;
-  currentClueIndex: number;
-  hintLevel: number;
-  solvedWords: string[];
-  isChainCompleted: boolean;
-  currentPoints: number;
-  stats: GameStats;
-};
+const GameContext = createContext<GameContextValue | undefined>(undefined);
 
-type GameAction =
-  | { type: 'CHECK_ANSWER'; payload: string }
-  | { type: 'SHOW_HINT' }
-  | { type: 'RESTART_CHAIN' }
-  | { type: 'LOAD_NEXT_CHAIN' }
-  | { type: 'LOAD_SAVED_STATS'; payload: GameStats };
-
-// Constants
-const POINTS_PER_CORRECT_ANSWER = 100;
-const POINTS_PER_HINT = 25;
-const MAX_HINT_LEVEL = 3;
-
-// Initial state
-const initialState: GameState = {
-  currentChain: wordChains[0],
-  currentClueIndex: 0,
-  hintLevel: 0,
-  solvedWords: [],
-  isChainCompleted: false,
-  currentPoints: 0,
-  stats: {
-    chainsCompleted: 0,
-    hintsUsed: 0,
-    wordsGuessed: 0,
-    bestTime: null,
-    totalPoints: 0,
-  },
-};
-
-// Create context
-const GameContext = createContext<{
-  state: GameState;
-  dispatch: React.Dispatch<GameAction>;
-} | undefined>(undefined);
-
-// Reducer function
-function gameReducer(state: GameState, action: GameAction): GameState {
-  switch (action.type) {
-    case 'CHECK_ANSWER': {
-      // Validate that we have a current chain and the index is valid
-      if (!state.currentChain?.answers || 
-          state.currentClueIndex < 0 || 
-          state.currentClueIndex >= state.currentChain.answers.length) {
-        return state;
-      }
-
-      const userAnswer = action.payload.trim().toLowerCase();
-      const correctAnswer = state.currentChain.answers[state.currentClueIndex].toLowerCase();
-      
-      if (userAnswer === correctAnswer) {
-        const newSolvedWords = [...state.solvedWords, correctAnswer];
-        const newIndex = state.currentClueIndex + 1;
-        const isCompleted = newIndex >= state.currentChain.clues.length;
-        
-        // Calculate points for correct answer
-        const earnedPoints = POINTS_PER_CORRECT_ANSWER;
-        const newCurrentPoints = state.currentPoints + earnedPoints;
-        
-        // Update stats
-        const newStats = {
-          ...state.stats,
-          wordsGuessed: state.stats.wordsGuessed + 1,
-          chainsCompleted: isCompleted ? state.stats.chainsCompleted + 1 : state.stats.chainsCompleted,
-          totalPoints: state.stats.totalPoints + earnedPoints,
-        };
-        
-        return {
-          ...state,
-          currentClueIndex: newIndex,
-          hintLevel: 0,
-          solvedWords: newSolvedWords,
-          isChainCompleted: isCompleted,
-          currentPoints: newCurrentPoints,
-          stats: newStats,
-        };
-      }
-      return state;
-    }
-    
-    case 'SHOW_HINT': {
-      if (state.hintLevel >= MAX_HINT_LEVEL) {
-        return state;
-      }
-
-      const pointsDeduction = POINTS_PER_HINT * (state.hintLevel + 1);
-      const newCurrentPoints = Math.max(0, state.currentPoints - pointsDeduction);
-      
-      return {
-        ...state,
-        hintLevel: state.hintLevel + 1,
-        stats: {
-          ...state.stats,
-          hintsUsed: state.stats.hintsUsed + 1,
-          totalPoints: Math.max(0, state.stats.totalPoints - pointsDeduction),
-        },
-        currentPoints: newCurrentPoints,
-      };
-    }
-    
-    case 'RESTART_CHAIN':
-      return {
-        ...state,
-        currentClueIndex: 0,
-        hintLevel: 0,
-        solvedWords: [],
-        isChainCompleted: false,
-        currentPoints: 0,
-        stats: state.stats,
-      };
-    
-    case 'LOAD_NEXT_CHAIN': {
-      // Validate that wordChains array exists and has items
-      if (!wordChains || wordChains.length === 0) {
-        return state;
-      }
-
-      // Find the index of the current chain
-      const currentIndex = wordChains.findIndex(chain => chain.id === state.currentChain?.id);
-      // Calculate the next index, wrapping around if needed
-      const nextIndex = (currentIndex + 1) % wordChains.length;
-      
-      return {
-        ...state,
-        currentChain: wordChains[nextIndex],
-        currentClueIndex: 0,
-        hintLevel: 0,
-        solvedWords: [],
-        isChainCompleted: false,
-        currentPoints: 0,
-        stats: state.stats,
-      };
-    }
-    
-    case 'LOAD_SAVED_STATS':
-      return {
-        ...state,
-        stats: action.payload,
-      };
-    
-    default:
-      return state;
-  }
-}
-
-// Provider component
 export function GameProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(gameReducer, initialState);
-  
-  // Load saved stats when the app starts
+  const [state, dispatch] = useReducer(reducer, chains, createInitialState);
+  const saver = useMemo(() => createSaver(AsyncStorage), []);
+  const latest = useRef(state);
+  latest.current = state;
+
   useEffect(() => {
-    const loadSavedStats = async () => {
-      try {
-        const savedStats = await AsyncStorage.getItem('gameStats');
-        if (savedStats) {
-          const parsedStats = JSON.parse(savedStats);
-          dispatch({ type: 'LOAD_SAVED_STATS', payload: parsedStats });
-        }
-      } catch (error) {
-        console.error('Error loading saved stats:', error);
-      }
+    setHapticsEnabled(state.settings.haptics);
+  }, [state.settings.haptics]);
+
+  // Hydrate once.
+  useEffect(() => {
+    let cancelled = false;
+    loadSave(AsyncStorage).then((save) => {
+      if (!cancelled) dispatch({ type: 'HYDRATE', save });
+    });
+    return () => {
+      cancelled = true;
     };
-    loadSavedStats();
   }, []);
 
-  // Save stats whenever they change
+  // Autosave (debounced). Time is saved at most every 5 s so ticks don't write every second.
+  const timeBucket = Math.floor(state.elapsedMs / 5000);
   useEffect(() => {
-    const saveStats = async () => {
-      try {
-        await AsyncStorage.setItem('gameStats', JSON.stringify(state.stats));
-      } catch (error) {
-        console.error('Error saving stats:', error);
-      }
-    };
-    saveStats();
-  }, [state.stats]);
+    if (state.hydrated) saver.schedule(toSave(latest.current));
+  }, [saver, state.hydrated, state.chainId, state.linkIndex, state.links, state.history, state.stats, state.settings, timeBucket]);
 
-  const value = { state, dispatch };
-  
+  // Save immediately when the app goes to the background.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next !== 'active' && latest.current.hydrated) {
+        saver.schedule(toSave(latest.current));
+        void saver.flush();
+      }
+    });
+    return () => sub.remove();
+  }, [saver]);
+
+  const value = useMemo(() => ({ state, dispatch, chains }), [state]);
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 }
 
-// Custom hook for accessing game state and dispatch
-export function useGameState() {
+function useGameContext() {
   const context = useContext(GameContext);
-  if (context === undefined) {
-    throw new Error('useGameState must be used within a GameProvider');
-  }
-  return context.state;
+  if (context === undefined) throw new Error('Game hooks must be used within a GameProvider');
+  return context;
+}
+
+export function useGameState() {
+  return useGameContext().state;
 }
 
 export function useGameDispatch() {
-  const context = useContext(GameContext);
-  if (context === undefined) {
-    throw new Error('useGameDispatch must be used within a GameProvider');
-  }
-  return context.dispatch;
+  return useGameContext().dispatch;
+}
+
+export function useChains() {
+  return useGameContext().chains;
+}
+
+/** True when motion should be reduced: `settings.reduceMotion` if set, otherwise the system setting. */
+export function useReduceMotion(): boolean {
+  const system = useReducedMotion();
+  const override = useGameContext().state.settings.reduceMotion;
+  return override ?? system;
+}
+
+const TICK_MS = 1000;
+
+/**
+ * Sends a TICK every second while the calling screen is focused and the app is
+ * active. Call it from the Play tab.
+ */
+export function usePlayTimer() {
+  const dispatch = useGameDispatch();
+
+  useFocusEffect(
+    React.useCallback(() => {
+      let interval: ReturnType<typeof setInterval> | null = null;
+      let last = Date.now();
+
+      const start = () => {
+        if (interval) return;
+        last = Date.now();
+        interval = setInterval(() => {
+          const now = Date.now();
+          // Cap each tick so a suspended JS thread can't add a huge jump.
+          dispatch({ type: 'TICK', ms: Math.min(now - last, TICK_MS * 5) });
+          last = now;
+        }, TICK_MS);
+      };
+      const stop = () => {
+        if (interval) clearInterval(interval);
+        interval = null;
+      };
+
+      if (AppState.currentState === 'active') start();
+      const sub = AppState.addEventListener('change', (next) => (next === 'active' ? start() : stop()));
+      return () => {
+        stop();
+        sub.remove();
+      };
+    }, [dispatch]),
+  );
 }
