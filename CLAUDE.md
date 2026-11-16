@@ -22,38 +22,10 @@ Clue 3: "The {BRAIN} sends signals to this blood pump"      → HEART
 | `docs/CONTENT_GUIDE.md` | How to write good chains (tone, difficulty, link quality) |
 | `prompts/` | The ordered implementation phases. Do them one at a time. |
 
-## Commands
-
-```bash
-npm install
-npm run dev              # expo start
-npm run build:web        # web export (quick smoke test)
-npx tsc --noEmit         # type check — must pass
-npm test                 # unit tests (added in phase 01)
-npm run validate:chains  # content validator (added in phase 01)
-```
-
-## Project layout (target, after phase 01)
-
-```
-app/                 expo-router screens: index (landing), (tabs)/index|how-to-play|stats
-components/          UI components (one per file, default export)
-lib/game/            PURE game logic: no React, no React Native imports; unit-tested
-  answers.ts         normalize, isCorrect, isNearMiss
-  scoring.ts         link points, stars, chain score
-  reducer.ts         game reducer and action types
-  storage.ts         versioned AsyncStorage load/save/migrate
-context/GameContext.tsx  thin provider that wires reducer + storage
-data/chains/*.json   chain content, one file per pack
-data/chains/index.ts loads and exports the ordered chain list
-scripts/validate-chains.ts
-constants/theme.ts   colours, spacing, radii, type scale (replaces constants/Colors.ts)
-```
-
 ## Conventions
 
 - TypeScript strict. No `any` except at third-party boundaries.
-- Game rules live in `lib/game` and nowhere else. Components never compare answers themselves.
+- Game rules live in `lib/game` (no React or React Native imports) and nowhere else. Components never compare answers themselves.
 - Styles go in `StyleSheet.create` at the bottom of each file. Use tokens from `constants/theme.ts`. Don't hard-code hex values in components.
 - Animations: use `react-native-reanimated` (already installed). Respect reduced motion (`useReducedMotion()`).
 - Haptics: use `expo-haptics` (already installed) through the `lib/haptics.ts` wrapper, which is a no-op on web.
