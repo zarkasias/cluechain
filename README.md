@@ -1,25 +1,85 @@
 # Clue Chains
 
-A family-friendly word puzzle for phones (and the web). Solve a clue, and your answer becomes part of the next clue. Link five answers together to complete the chain.
+**Every answer is the next clue.**
+
+Clue Chains is a word puzzle for all ages. Solve a clue, and your answer becomes part of the next one. Link five answers together to complete the chain.
+
+## How a chain works
+
+Every chain has five links. The answer to each link appears in the clue for the next one, highlighted in pink, so you solve it one step at a time:
 
 ```
-Clue 1  Large gray animal with a trunk                         → ELEPHANT
-Clue 2  An ELEPHANT never forgets — thanks to this organ       → BRAIN
-Clue 3  The BRAIN sends signals to this organ that pumps blood → HEART
-Clue 4  A broken HEART can mend, but this see-through material shatters for good → GLASS
-Clue 5  Sand trickles through two bulbs of GLASS in this old timer             → HOURGLASS
+1  Frozen water that clinks in your drink          → ICE
+2  ICE cream is served in this crunchy holder      → CONE
+3  A pine CONE falls from this tall plant          → TREE
+4  Birds build these in a TREE                     → NEST
+5  A bird's NEST keeps these warm until they hatch → EGG
 ```
 
-## How to play
+(This example chain isn't one of the puzzles, so it spoils nothing.)
 
-- **Read the clue and type your answer.** The tiles show how many letters it has. Spelling, capitals, spaces and simple plurals are forgiven.
-- **Your answer carries over.** It appears in the next clue as a pink word, so every link depends on the one before.
-- **Letter check.** Guess a word of the right length and each letter is marked: ✓ right spot, ● in the word but elsewhere, plain means not in the word.
-- **Stuck?** A hint reveals the next letter (−20 points), or you can reveal the whole word (that link scores 0).
-- **Score and stars.** Each link is worth up to 100 points. A wrong guess costs 10, and a near miss ("So close!") costs nothing. Finish without hints or reveals for a +100 perfect bonus and up to three stars.
-- **Stats.** Streaks, best times and a history of every chain you've finished, which you can replay.
+The tiles under each clue show how many letters the answer has. Type your guess and press Go.
 
-The chain's title (such as "Trunk to Time") stays hidden until you finish, because it names the first and last answers. Sharing a result never includes answers either:
+You don't have to be exact about everything:
+- Capitals, spaces and hyphens don't matter. `Ice-Cream` counts as ICE CREAM.
+- Simple plurals count. `trees` is fine when the answer is TREE.
+- Where a clue has a fair second answer, it counts too, and so do British spellings like `colour`.
+
+## Letter check
+
+Guess a word with the right number of letters and each letter is marked:
+
+| Mark | Meaning |
+|---|---|
+| ✓ solid green border | Right letter, right spot |
+| ● dashed blue border | In the word, but somewhere else |
+| plain | Not in the word |
+
+```
+The answer is CANDLE. You guess DANCER:
+
+  D   A   N   C   E   R
+  ●   ✓   ✓   ●   ●
+```
+
+A and N are in the right spots. D, C and E are in CANDLE but somewhere else. R isn't in it at all.
+
+Your last three checked guesses stay on the card until you solve the link. If your guess is a different length, you'll be told how many letters the answer needs.
+
+## Hints and reveals
+
+- **Hint** shows the next letter in the tiles, starting from the first. It costs 20 points per letter.
+- **Reveal** shows the whole word so you can move on. That link scores 0.
+- **So close!** means your guess is one letter off. Check your spelling. Near misses cost nothing.
+
+## Scoring
+
+- Each link starts at **100 points**.
+- A wrong guess costs **10**. A hint costs **20** per letter.
+- A solved link never drops below **10**, however many tries it took.
+- Finish a chain with no hints and no reveals for a **+100 perfect bonus**.
+
+## Stars
+
+| Stars | How to earn them |
+|---|---|
+| ★★★ | No hints, no reveals, and 2 or fewer wrong guesses in the whole chain |
+| ★★ | No reveals, and 3 or fewer hint letters |
+| ★ | Finish the chain |
+
+## Difficulty
+
+Chains come in three levels and are mixed so you get variety as you play:
+
+- **Easy:** everyday words and picture-book clues. *Birds build these in a TREE.*
+- **Medium:** one twist, such as a common phrase or a word with two meanings. *An ORANGE is a fruit, and also one of these.*
+- **Hard:** wordplay and well-known sayings, always fair. *When you DOVE into the pool, you made one of these.*
+
+Each chain gets a little harder from link 1 to link 5. Its title, such as "Ice to Eggs", is revealed when you finish, because it names the first and last answers.
+
+## After each chain
+
+The recap shows your stars, score, time and how each link went. You can share your result. It never includes answers, so it won't spoil the chain for friends:
 
 ```
 Clue Chains #1 · Easy
@@ -27,70 +87,18 @@ Clue Chains #1 · Easy
 🟩🟩🟩🟩🟩
 ```
 
-There are currently 33 chains: the 3 originals and a 30-chain starter pack (10 easy, 10 medium, 10 hard).
+🟩 solved cleanly · 🟨 solved with hints or wrong guesses · 🟥 revealed
 
-## Getting started
+## Stats and streaks
 
-You need Node.js (developed on 22) and the [Expo Go](https://expo.dev/go) app on your phone.
+The Stats tab tracks chains completed, perfect chains, total points, best and average times, and words solved. Play at least one new chain a day to build your **streak**.
 
-```bash
-npm install
-npm run dev        # starts Expo; scan the QR code with Expo Go (iOS camera / Android Expo Go)
-```
+Every chain you finish is listed in your history, where you can replay it to beat your best score or time. Replays update your personal bests but don't change your overall stats.
 
-Press `w` in the Expo terminal to open the web version instead.
+## New to the game?
 
-## Scripts
+A short tutorial walks you through your first chain. The **Guide** tab explains the rules any time, and you can replay the tutorial from there.
 
-| Command | What it does |
-|---|---|
-| `npm run dev` | Start the Expo dev server |
-| `npm run build:web` | Export the web build to `dist/` |
-| `npm test` | Unit tests (Jest) |
-| `npx tsc --noEmit` | Type check |
-| `npm run lint` | ESLint |
-| `npm run validate:chains` | Check every chain pack against the content rules |
+Clue Chains works with VoiceOver and TalkBack, respects your device's reduced-motion setting, and keeps your progress on your device.
 
-Before calling any change done, run the type check, the tests and the chain validator.
-
-## Project layout
-
-```
-app/                  screens (expo-router): landing page, and the Play, Guide and Stats tabs
-components/           UI: GameScreen, play/ (clue card, tiles, guess rows, …), recap/, tutorial/
-lib/game/             pure game rules, no React: answer matching, letter check, scoring,
-                      stats, the game reducer and saved-game storage (unit-tested)
-context/              GameContext: wires the reducer to storage
-data/chains/          chain content as JSON, one file per pack, loaded in order by index.ts
-constants/theme.ts    colours, spacing, type and motion tokens
-scripts/              the chain validator and its family-friendly watch list
-docs/                 specs, content guides and review notes (see below)
-prompts/              the step-by-step implementation phases
-```
-
-Built with Expo (SDK 58), React Native, expo-router, TypeScript (strict), Reanimated and expo-haptics. Progress is saved on the device with AsyncStorage. Nothing is sent anywhere.
-
-## Writing new chains
-
-Chains live in `data/chains/*.json`. Each chain has an id, a title, a difficulty and exactly five links. From link 2 on, each clue marks the previous answer with braces:
-
-```json
-{ "clue": "Birds build these in a {TREE}", "answer": "nest" }
-```
-
-1. Read `docs/CONTENT_GUIDE.md` (what makes a good link) and `docs/CONTENT_FORMAT.md` (the schema).
-2. `prompts/chain-writer.md` is a reusable prompt for drafting a batch of chains with Claude.
-3. Add the pack to `data/chains/index.ts`, then run `npm run validate:chains`.
-4. Write a short editorial review in `docs/content-review/` (see `pack-02.md` for the format).
-
-## Documentation
-
-| Doc | What it covers |
-|---|---|
-| `docs/GAME_RULES.md` | Source of truth for game logic: matching, letter check, scoring, stars, stats, saving |
-| `docs/DESIGN_SPEC.md` | Source of truth for UI: screens, components, tokens, motion, copy, accessibility |
-| `docs/CONTENT_FORMAT.md` | Chain schema and validator rules |
-| `docs/CONTENT_GUIDE.md` | How to write good chains |
-| `docs/QA_CHECKLIST.md` | QA results, plus the VoiceOver/TalkBack device check |
-| `docs/UX_REVIEW.md` | The expert review the redesign came from |
-| `docs/proposals/` | Feature proposals and their approval status |
+There are 33 chains to play so far, with more on the way.
