@@ -1,329 +1,448 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { AppState, LayoutChangeEvent, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { announce } from '@/lib/announce';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useChains, useGameDispatch, useGameState, useReduceMotion } from '@/context/GameContext';
 import {
-  View,
-  StyleSheet,
-  Text,
-  Animated,
-  Platform,
-  StatusBar,
-} from 'react-native';
-import { GradientView } from '@/components/GradientView';
-import ClueDisplay from './ClueDisplay';
-import AnswerInput, { AnswerInputHandle } from './AnswerInput';
-import WordChain from './WordChain';
-import GameControls from './GameControls';
-import { useGameState, useGameDispatch } from '@/context/GameContext';
-import { Colors, Gradients } from '@/constants/Colors';
+  answerLetters,
+  canHint,
+  chainResult,
+  countMarks,
+  chainScore,
+  clueText,
+  currentChain,
+  HINT_LETTER_PENALTY,
+  isChainComplete,
+  isReplay,
+  LINKS_PER_CHAIN,
+} from '@/lib/game';
+import type { LinkState } from '@/lib/game';
+import { haptics } from '@/lib/haptics';
+import { color, layout, motion, space } from '@/constants/theme';
+import PlayHeader from './play/PlayHeader';
+import ChainTrack, { ChainTrackHandle, Rect } from './play/ChainTrack';
+import ClueCard from './play/ClueCard';
+import LetterTiles, { LetterTilesHandle, TileFill } from './play/LetterTiles';
+import GuessRows, { describeGuess } from './play/GuessRows';
+import AnswerInput, { AnswerInputHandle, InputTone } from './play/AnswerInput';
+import FeedbackLine, { Feedback } from './play/FeedbackLine';
+import ActionBar from './play/ActionBar';
+import ConfirmSheet from './play/ConfirmSheet';
+import RecapView from './recap/RecapView';
+import CarryOverLayer, { FLIGHT_MS, Ghost } from './play/CarryOverLayer';
+
+/**
+ * The carry-over (DESIGN_SPEC §3). The reducer has already advanced; this is
+ * presentation only. Until `landed`, the track and score still show the link as
+ * unsolved; until `swapped`, the card still shows the solved link's clue.
+ */
+type Transition = { index: number; mode: Exclude<TileFill, null>; landed: boolean; swapped: boolean };
+type Sheet = 'reveal' | 'restart' | null;
+
+/** Below this height (e.g. 360×740 with the keyboard up) the layout tightens. */
+const COMPACT_HEIGHT = 600;
+/** At or above this height the clue card grows to its minimum height. */
+const TALL_HEIGHT = 700;
+/** Tablets and desktop web: keep the input under the card instead of at the bottom. */
+const WIDE_WIDTH = 600;
 
 export default function GameScreen() {
-  const {
-    currentChain,
-    currentClueIndex,
-    hintLevel,
-    solvedWords,
-    isChainCompleted,
-    currentPoints,
-  } = useGameState();
+  const state = useGameState();
+  const chains = useChains();
   const dispatch = useGameDispatch();
-  const [userAnswer, setUserAnswer] = useState('');
-  const [showError, setShowError] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const { linkIndex, links, lastOutcome, lastCheck } = state;
+  const chain = currentChain(chains, state);
+  const complete = isChainComplete(state);
 
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const slideAnim = useRef(new Animated.Value(0)).current;
-  const answerInputRef = useRef<AnswerInputHandle>(null);
+  const [answer, setAnswer] = useState('');
+  const [feedback, setFeedback] = useState<Feedback>(null);
+  /** The letter-check row label, read after the feedback line. */
+  const [feedbackDetail, setFeedbackDetail] = useState<string | null>(null);
+  const [tone, setTone] = useState<InputTone>(null);
+  const [shakeKey, setShakeKey] = useState(0);
+  const [transition, setTransition] = useState<Transition | null>(null);
+  const [sheet, setSheet] = useState<Sheet>(null);
+  const [height, setHeight] = useState(0);
 
-  // Reset animations when chain changes
-  useEffect(() => {
-    fadeAnim.setValue(1);
-    slideAnim.setValue(0);
-  }, [currentChain.id]);
+  const [ghost, setGhost] = useState<Ghost | null>(null);
+  const reduceMotion = useReduceMotion();
 
-  // Focus input when a new word is revealed
-  useEffect(() => {
-    if (!isChainCompleted && !isAnimating && Platform.OS !== 'ios') {
-      const focusTimeout = setTimeout(() => {
-        answerInputRef.current?.focus();
-      }, 100); // Small delay to ensure animations are complete
-      return () => clearTimeout(focusTimeout);
-    }
-  }, [currentClueIndex, isChainCompleted, isAnimating]);
+  const inputRef = useRef<AnswerInputHandle>(null);
+  const rootRef = useRef<React.ComponentRef<typeof View>>(null);
+  const trackRef = useRef<ChainTrackHandle>(null);
+  const tilesRef = useRef<LetterTilesHandle>(null);
+  const ghostId = useRef(0);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const contentOpacity = useSharedValue(1);
+  const cardOpacity = useSharedValue(1);
+  const cardY = useSharedValue(0);
 
-  const animateTransition = (callback: () => void) => {
-    setIsAnimating(true);
+  const later = (fn: () => void, ms: number) => {
+    timers.current.push(setTimeout(fn, ms));
+  };
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: -50,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      callback();
+  const transitionRef = useRef(transition);
+  useLayoutEffect(() => {
+    transitionRef.current = transition;
+  }, [transition]);
+  const busy = transition !== null;
+  const shownIndex = transition && !transition.swapped ? transition.index : linkIndex;
+  const showCompletion = complete && !transition;
+  // Until the ghost lands, present the link being carried over as still unsolved.
+  const presentLinks: LinkState[] =
+    transition && !transition.landed
+      ? links.map((l, i) => (i === transition.index ? { ...l, solved: false, revealed: false } : l))
+      : links;
+  const trackCurrent = transition && !transition.landed ? transition.index : complete ? -1 : linkIndex;
+  const compact = height > 0 && height < COMPACT_HEIGHT;
+  const tall = height >= TALL_HEIGHT;
+  const wide = width >= WIDE_WIDTH;
 
-      // Reset animation values
-      fadeAnim.setValue(0);
-      slideAnim.setValue(50);
+  const focusInput = useCallback(() => inputRef.current?.focus(), []);
 
-      // Animate in the new content
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        setIsAnimating(false);
-      });
+  const clearTimers = () => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+  };
+
+  /** Jump straight to the end state (used when the app is backgrounded mid-animation). */
+  const endCarryOver = useCallback(() => {
+    clearTimers();
+    setGhost(null);
+    setTransition(null);
+    setAnswer('');
+    setTone(null);
+    contentOpacity.set(1);
+    cardOpacity.set(1);
+    cardY.set(0);
+  }, [contentOpacity, cardOpacity, cardY]);
+
+  /** Measure the tiles and the target slot, then launch the ghost chip (§3 step 2). */
+  const launchGhost = async (index: number, word: string, revealed: boolean) => {
+    const measureRoot = new Promise<Rect | null>((resolve) => {
+      const node = rootRef.current;
+      if (!node) return resolve(null);
+      node.measureInWindow((x, y, w, h) => resolve({ x, y, width: w, height: h }));
+    });
+    const [root, from, to] = await Promise.all([
+      measureRoot,
+      tilesRef.current?.measure() ?? null,
+      trackRef.current?.measureSlot(index) ?? null,
+    ]);
+    if (!root || !from || !to) return; // can't measure: skip the flight, the rest still runs
+    setGhost({
+      id: ++ghostId.current,
+      word,
+      revealed,
+      from: { x: from.x - root.x + from.width / 2, y: from.y - root.y + from.height / 2 },
+      to: { x: to.x - root.x + to.width / 2, y: to.y - root.y + to.height / 2 },
     });
   };
 
+  /**
+   * §3 timeline. Correct: tiles fill (0) → ghost flies (350) → slot fills, +N (750)
+   * → card crossfades (750) → input clears and focuses (950). A reveal first fills
+   * the tiles at 60 ms per letter. Link 5 lands, holds 400 ms, then shows completion.
+   */
+  const startCarryOver = (index: number, mode: Transition['mode']) => {
+    if (!chain) return;
+    const link = chain.links[index];
+    const letters = answerLetters(link).length;
+    const isLast = index === LINKS_PER_CHAIN - 1;
+    clearTimers();
+    setTransition({ index, mode, landed: false, swapped: false });
+
+    const fillMs = mode === 'revealed' && !reduceMotion ? letters * 60 : 0;
+    const flyAt = mode === 'correct' ? 350 : fillMs + 150;
+    const landAt = reduceMotion ? flyAt : flyAt + FLIGHT_MS;
+    const fade = reduceMotion ? motion.fast : 150;
+    const fadeIn = reduceMotion ? motion.fast : 200;
+
+    if (!reduceMotion) {
+      // Bring the target slot into view before measuring it.
+      later(() => trackRef.current?.scrollToSlot(index, false), flyAt - 60);
+      later(() => void launchGhost(index, link.answer, mode === 'revealed'), flyAt);
+    }
+
+    later(() => {
+      setGhost(null);
+      setTransition((t) => (t ? { ...t, landed: true } : t));
+    }, landAt);
+
+    if (isLast) {
+      later(() => (contentOpacity.value = withTiming(0, { duration: fade })), landAt + 400);
+      later(() => {
+        setTransition(null);
+        contentOpacity.value = withTiming(1, { duration: fadeIn });
+      }, landAt + 400 + fade);
+      return;
+    }
+
+    later(() => (cardOpacity.value = withTiming(0, { duration: fade })), landAt);
+    later(() => {
+      setTransition((t) => (t ? { ...t, swapped: true } : t));
+      cardY.value = reduceMotion ? 0 : 12;
+      cardOpacity.value = withTiming(1, { duration: fadeIn });
+      cardY.value = withTiming(0, { duration: fadeIn });
+    }, landAt + fade);
+    later(() => {
+      setAnswer('');
+      setTone(null);
+      focusInput();
+    }, landAt + 200);
+    later(() => setTransition(null), landAt + fade + fadeIn);
+  };
+
+  // If the app is backgrounded mid-animation, jump to the end state.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next !== 'active' && transitionRef.current) endCarryOver();
+    });
+    return () => sub.remove();
+  }, [endCarryOver]);
+
+  // React to the reducer's verdict. Layout effect so the next link never flashes before the hold.
+  // The verdict comes from the reducer (components never judge answers), so this effect is
+  // the one place that turns it into feedback, haptics and the carry-over.
+  useLayoutEffect(() => {
+    if (!chain || lastOutcome === null) return;
+    if (lastOutcome === 'correct') {
+      const index = complete ? linkIndex : linkIndex - 1;
+      const solved = chain.links[index];
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- responding to the reducer's verdict
+      setFeedback({ kind: 'correct', word: solved.answer });
+      setTone('correct');
+      haptics.success();
+      dispatch({ type: 'CLEAR_FEEDBACK' });
+      startCarryOver(index, 'correct');
+    } else if (lastOutcome === 'wrong') {
+      setFeedback(
+        lastCheck
+          ? { kind: 'checked', ...countMarks(lastCheck) }
+          : { kind: 'length', letters: answerLetters(chain.links[linkIndex]).length },
+      );
+      setFeedbackDetail(lastCheck ? describeGuess(lastCheck) : null);
+      setTone('wrong');
+      setShakeKey((k) => k + 1);
+      haptics.error();
+    } else if (lastOutcome === 'near') {
+      setFeedback({ kind: 'near' });
+      setFeedbackDetail(lastCheck ? describeGuess(lastCheck) : null);
+      setTone('near');
+      haptics.light();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastOutcome]);
+
+  // Announce each new link to screen readers, and focus the input on every platform.
+  useEffect(() => {
+    if (!chain || busy || complete) return;
+    announce(
+      `Link ${linkIndex + 1} of 5. ${clueText(chain.links[linkIndex].clue)}`,
+    );
+    const t = setTimeout(focusInput, 50);
+    return () => clearTimeout(t);
+  }, [chain, linkIndex, busy, complete, focusInput]);
+
+  const clearFeedback = () => {
+    setFeedback(null);
+    setFeedbackDetail(null);
+    setTone(null);
+    if (lastOutcome === 'wrong' || lastOutcome === 'near') dispatch({ type: 'CLEAR_FEEDBACK' });
+  };
+
+  const handleChangeText = (text: string) => {
+    setAnswer(text);
+    if (feedback || tone) clearFeedback();
+  };
+
   const handleSubmit = () => {
-    if (userAnswer.trim() === '' || isAnimating) return;
-
-    const correctAnswer = currentChain.answers[currentClueIndex].toLowerCase();
-    if (userAnswer.trim().toLowerCase() === correctAnswer) {
-      setShowSuccess(true);
-      setShowError(false);
-
-      animateTransition(() => {
-        dispatch({ type: 'CHECK_ANSWER', payload: userAnswer });
-        setUserAnswer('');
-        setShowSuccess(false);
-      });
-    } else {
-      setShowError(true);
-      setShowSuccess(false);
-    }
+    // A wrong guess must be edited before it can be judged again (no double penalty).
+    if (busy || answer.trim() === '' || lastOutcome !== null) return;
+    dispatch({ type: 'SUBMIT_GUESS', guess: answer });
   };
 
-  const handleShowHint = () => {
-    if (!isAnimating) {
-      dispatch({ type: 'SHOW_HINT' });
-    }
+  const handleHint = () => {
+    if (busy || !canHint(chains, state)) return;
+    dispatch({ type: 'HINT' });
+    setFeedback({ kind: 'hint', cost: HINT_LETTER_PENALTY });
+    setTone(null);
+    haptics.selection();
   };
 
-  const handleRestartChain = () => {
-    if (!isAnimating) {
-      dispatch({ type: 'RESTART_CHAIN' });
-      setUserAnswer('');
-      setShowError(false);
-      setShowSuccess(false);
-    }
+  const confirmReveal = () => {
+    setSheet(null);
+    if (!chain || busy || complete) return;
+    setFeedback(null);
+    setTone(null);
+    dispatch({ type: 'REVEAL' });
+    startCarryOver(linkIndex, 'revealed');
   };
 
-  const handleNextChain = () => {
-    if (!isAnimating) {
-      dispatch({ type: 'LOAD_NEXT_CHAIN' });
-      setUserAnswer('');
-      setShowError(false);
-      setShowSuccess(false);
-    }
+  const confirmRestart = () => {
+    setSheet(null);
+    endCarryOver();
+    clearFeedback();
+    dispatch({ type: 'RESTART' });
   };
 
-  const getCurrentHint = () => {
-    if (hintLevel > 0 && currentClueIndex < currentChain.answers.length) {
-      return currentChain.answers[currentClueIndex][0].toUpperCase();
-    }
-    return null;
+  const goNext = () => {
+    setAnswer('');
+    clearFeedback();
+    dispatch({ type: 'NEXT_CHAIN' });
   };
+
+  const replay = () => {
+    setAnswer('');
+    clearFeedback();
+    if (chain) dispatch({ type: 'REPLAY_CHAIN', id: chain.id });
+  };
+
+  const contentStyle = useAnimatedStyle(() => ({ opacity: contentOpacity.value }));
+  const cardStyle = useAnimatedStyle(() => ({
+    opacity: cardOpacity.value,
+    transform: [{ translateY: cardY.value }],
+  }));
+  const onLayout = (e: LayoutChangeEvent) => setHeight(e.nativeEvent.layout.height);
+  const gap = compact ? space.sm : space.lg;
+
+  const untouched = linkIndex === 0 && links[0].hintLetters === 0 && links[0].wrongGuesses === 0 && !links[0].solved;
+  const result = chainResult(state);
+
+  if (!chain) {
+    return <RecapView kind="all" />;
+  }
+
+  if (showCompletion && result && state.completion) {
+    return (
+      <Animated.View style={[styles.grow, contentStyle]}>
+        <RecapView
+          kind="chain"
+          chain={chain}
+          chainNumber={chains.indexOf(chain) + 1}
+          result={result}
+          completion={state.completion}
+          onNext={goNext}
+          onReplay={replay}
+        />
+      </Animated.View>
+    );
+  }
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <View style={styles.header}>
-        <Text style={styles.title}>ClueChain</Text>
-        <View style={styles.pointsWrapper}>
-          <GradientView
-            colors={Gradients.accent}
-            style={styles.pointsContainer}
-          >
-            <Text style={styles.points}>Points: {currentPoints}</Text>
-          </GradientView>
+    <View ref={rootRef} style={[styles.root, { paddingTop: insets.top + space.sm }]} onLayout={onLayout}>
+      <Animated.View style={[styles.column, { gap }, contentStyle]}>
+        <PlayHeader
+          chainNumber={chains.indexOf(chain) + 1}
+          totalChains={chains.length}
+          difficulty={chain.difficulty}
+          score={chainScore(presentLinks)}
+          replay={isReplay(state)}
+        />
+        <ChainTrack ref={trackRef} chain={chain} links={presentLinks} currentIndex={trackCurrent} />
+
+        <View style={[styles.grow, { gap }]}>
+          <Animated.View style={[cardStyle, tall ? (wide ? styles.cardTall : [styles.cardTall, styles.cardGrow]) : null]}>
+            <ClueCard
+              key={`${chain.id}-${shownIndex}`}
+              link={chain.links[shownIndex]}
+              linkIndex={shownIndex}
+              compact={compact}
+              style={tall ? styles.grow : null}
+            >
+              <LetterTiles
+                ref={tilesRef}
+                link={chain.links[shownIndex]}
+                hintLetters={links[shownIndex].hintLetters}
+                fill={transition && !transition.swapped ? transition.mode : null}
+                maxSize={compact ? 36 : 44}
+              />
+              <GuessRows
+                link={chain.links[shownIndex]}
+                guesses={links[shownIndex].checkedGuesses}
+                maxSize={compact ? 36 : 44}
+                newestOnly={compact}
+              />
+            </ClueCard>
+          </Animated.View>
+
+          <View style={wide ? null : styles.spacer} />
+
+          <View style={[styles.bottom, { gap: compact ? space.xs : space.sm }]}>
+            <FeedbackLine feedback={feedback} detail={feedbackDetail} />
+            <AnswerInput
+              ref={inputRef}
+              value={answer}
+              onChangeText={handleChangeText}
+              onSubmit={handleSubmit}
+              tone={tone}
+              shakeKey={shakeKey}
+              disabled={busy}
+            />
+            <ActionBar
+              hintCost={HINT_LETTER_PENALTY}
+              canHint={canHint(chains, state)}
+              showRestart={!untouched}
+              disabled={busy}
+              onHint={handleHint}
+              onReveal={() => setSheet('reveal')}
+              onRestart={() => setSheet('restart')}
+            />
+          </View>
         </View>
-      </View>
+      </Animated.View>
 
-
-      <View style={styles.mainContent}>
-        <Animated.View
-          style={[
-            styles.clueContainer,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
-            },
-          ]}
-        >
-          <WordChain solvedWords={solvedWords} />
-          {!isChainCompleted ? (
-            <GradientView
-              colors={[Colors.surface, Colors.surfaceHighlight]}
-              style={styles.contentCard}
-            >
-              <ClueDisplay
-                clue={
-                  currentClueIndex < currentChain.clues.length
-                    ? currentChain.clues[currentClueIndex]
-                    : ''
-                }
-                answer={
-                  currentClueIndex < currentChain.answers.length
-                    ? currentChain.answers[currentClueIndex]
-                    : undefined
-                }
-                hintLevel={hintLevel}
-              />
-
-              <AnswerInput
-                ref={answerInputRef}
-                value={userAnswer}
-                onChangeText={setUserAnswer}
-                onSubmit={handleSubmit}
-                showError={showError}
-                showSuccess={showSuccess}
-              />
-              <GameControls
-                onHint={handleShowHint}
-                onRestart={handleRestartChain}
-                onNextChain={handleNextChain}
-                hintDisabled={hintLevel >= 3 || isChainCompleted}
-                isCompleted={isChainCompleted}
-              />
-            </GradientView>
-          ) : (
-            <GradientView
-              colors={[Colors.surface, Colors.surfaceSecondary]}
-              style={styles.contentCard}
-            >
-              <Text style={styles.completionTitle}>Chain Complete!</Text>
-              <Text style={styles.completionMessage}>
-                You've successfully completed the word chain!
-              </Text>
-              <Text style={styles.completionPoints}>
-                Points earned: {currentPoints}
-              </Text>
-              <GameControls
-                onHint={handleShowHint}
-                onRestart={handleRestartChain}
-                onNextChain={handleNextChain}
-                hintDisabled={true}
-                isCompleted={true}
-              />
-            </GradientView>
-          )}
-        </Animated.View>
-      </View>
-
-      <View style={styles.footer}></View>
+      <ConfirmSheet
+        visible={sheet === 'reveal'}
+        title="Reveal this word?"
+        message="You'll score 0 for this link."
+        confirmLabel="Reveal"
+        onConfirm={confirmReveal}
+        onCancel={() => setSheet(null)}
+      />
+      <ConfirmSheet
+        visible={sheet === 'restart'}
+        title="Restart this chain?"
+        message="Your progress on it will be lost."
+        confirmLabel="Restart"
+        onConfirm={confirmRestart}
+        onCancel={() => setSheet(null)}
+      />
+      <CarryOverLayer ghost={ghost} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
-    backgroundColor: 'transparent',
-    padding: 0,
-    paddingBottom: Platform.OS === 'ios' ? 100 : 80,
+    backgroundColor: color.bg,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    paddingBottom: 3,
-    marginBottom: 3,
-    marginTop: Platform.OS === 'ios' ? 35 : 0,
-  },
-  title: {
-    fontSize: 30,
-    fontFamily: 'Play-Bold',
-    padding: 12,
-    fontWeight: '600',
-    color: Colors.textOnPrimary,
-  },
-  pointsWrapper: {
-    flexShrink: 1,
-    flexGrow: 0,
-  },
-  pointsContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 16,
-    borderRadius: 20,
-    elevation: 2,
-    shadowColor: Colors.cardShadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  points: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.textOnPrimary,
-    textAlign: 'center',
-  },
-  mainContent: {
+  column: {
     flex: 1,
-    paddingLeft: 14,
-    paddingRight: 14,
-    justifyContent: 'flex-start',
-  },
-  clueContainer: {
     width: '100%',
+    maxWidth: layout.maxWidth,
+    alignSelf: 'center',
+    paddingHorizontal: layout.gutter,
+    paddingBottom: space.sm,
   },
-  contentCard: {
-    width: '100%',
-    padding: 8,
-    borderRadius: 16,
-    elevation: 6,
-    shadowColor: Colors.cardShadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
+  grow: {
+    flex: 1,
   },
-  completionCard: {
-    width: '100%',
-    padding: 14,
-    borderRadius: 16,
-    alignItems: 'center',
-    elevation: 4,
-    shadowColor: Colors.cardShadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
+  cardTall: {
+    minHeight: 220,
   },
-  completionTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    fontFamily: 'Play-Bold',
-    color: Colors.secondary,
-    marginBottom: 10,
+  cardGrow: {
+    flexGrow: 1,
+    maxHeight: 320,
   },
-  completionMessage: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: Colors.primary,
-    textAlign: 'left',
-    marginBottom: 10,
+  spacer: {
+    flex: 1,
+    minHeight: 0,
   },
-  completionPoints: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-  footer: {
-    marginTop: 12,
-  },
+  bottom: {},
 });
