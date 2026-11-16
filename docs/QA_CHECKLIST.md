@@ -117,8 +117,54 @@ Chain 1 played with 2 hints, 3 misses and 1 reveal:
 | # | Check | Why |
 |---|---|---|
 | D1 | Largest Dynamic Type / Android font scale: nothing clipped, Play screen usable | React Native Web ignores OS font scaling. The caps (A9) are in place, but this needs an iOS and an Android check. |
-| D2 | VoiceOver / TalkBack read-through of every screen | Needs a device. Labels, roles and announcements were checked in the DOM. |
-| D3 | Haptics on wrong / near / correct | Haptics are a no-op on web by design. |
+| D2 | VoiceOver / TalkBack read-through of every screen | Needs a device. Labels, roles and announcements were checked in the DOM. Use the script in "Device check: VoiceOver / TalkBack" below. |
+| D3 | Haptics on wrong / near / correct | Haptics are a no-op on web by design. Covered by V14 below. |
+
+## Device check: VoiceOver / TalkBack
+
+Run this in Expo Go on a real phone, once on iOS (VoiceOver) and once on Android (TalkBack). Fill in the Result columns. For anything that fails, note what you heard and on which screen.
+
+### Setup (do this first)
+
+Screen readers change how every tap works, so set up the on/off shortcut **before** turning one on.
+
+- **iPhone:** go to Settings → Accessibility → Accessibility Shortcut and choose VoiceOver. After that, **triple-click the side button** to turn VoiceOver on or off.
+- **Android:** go to Settings → Accessibility → TalkBack and turn on the TalkBack shortcut. After that, **hold both volume keys for about 3 seconds** to turn TalkBack on or off.
+- To start from a fresh game, clear Expo Go's storage for the app, or use Restart on the Play screen.
+
+### Gestures
+
+| Action | VoiceOver | TalkBack |
+|---|---|---|
+| Hear an item | tap it once | tap it once |
+| Next / previous item | swipe right / left | swipe right / left |
+| Activate (press) | double-tap anywhere | double-tap anywhere |
+| Read the whole screen | two-finger swipe up | swipe down then right, then "Read from top" |
+| Scroll | three-finger swipe | two-finger swipe |
+| Stop talking | two-finger tap | tap with one finger |
+
+**Typing:** double-tap the answer box to focus it. Then slide your finger across the keyboard and **lift your finger to type** the letter under it. Press Return/Go, or swipe to "Submit answer" and double-tap.
+
+### Script
+
+The examples use chain 1, "Trunk to Time" (answers: elephant, brain, heart, glass, hourglass).
+
+| # | Do | Expect to hear | iOS | Android |
+|---|---|---|---|---|
+| V1 | Open the app (landing page) | "Clue Chains", heading; then the "Play" button (or "Continue chain N, link X of 5") | | |
+| V2 | Activate Play, then swipe right from the top of the Play screen | In order: "Chain 1 of 33, Easy" (heading) · "Chain score 0 points" · "Chain progress: 0 of 5 solved" · the clue as one sentence · "Answer, 8 letters" · "Your answer" · "Submit answer" · "Hint, costs 20 points" · "Reveal word". **No chain title anywhere.** | | |
+| V3 | Listen to the clue on link 2 or later | The pink word is read as a normal word inside the sentence, not spelled out or read separately | | |
+| V4 | Type `antelope` and submit | "Not quite — 0 right, 7 elsewhere." then "Your guess ANTELOPE. Elsewhere: A, N, T, E, L, P, E. Not in the word: O." | | |
+| V5 | Swipe to the new guess row | The row is one item with the same "Your guess ANTELOPE…" label; individual tiles aren't focusable | | |
+| V6 | Type `cat` and submit | "Not quite — the answer has 8 letters." and no new row | | |
+| V7 | Type `elephanf` and submit | "So close! Check your spelling." then "Your guess ELEPHANF. Right: E in spot 1, …" | | |
+| V8 | Activate Hint | "Hint used: −20"; the tiles now read "Answer, 8 letters. Revealed: E" | | |
+| V9 | Type `elephant` and submit | "Nice! ELEPHANT joins the chain." then "Link 2 of 5. An elephant never forgets — thanks to this organ". Focus returns to the answer box. | | |
+| V10 | Activate Reveal word | The sheet is announced ("Reveal this word? You'll score 0 for this link."); Cancel and Reveal are both reachable; Cancel closes it | | |
+| V11 | Finish the chain | "Chain complete. N of 3 stars. N points. Time m:ss." The recap shows the title "Trunk to Time". | | |
+| V12 | On the recap, activate Share | Label "Share your result. Answers aren't included."; then the share sheet opens, or "Copied!" is announced | | |
+| V13 | Guide and Stats tabs: read the whole screen | Headings and text in order; the example illustrations are silent (not read as stray letters); every button is reachable | | |
+| V14 | Screen reader **off**: a wrong guess, a near miss, a correct answer | Haptics: a buzz for wrong, a light tap for "So close!", a success pulse for correct | | |
 
 ## Notes on fixes made during QA
 
