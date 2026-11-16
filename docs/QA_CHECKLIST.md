@@ -73,6 +73,26 @@ Run on 15 November 2026 for phase 07, on branch `ux-overhaul`. Browser checks dr
 | E8 | Save points to a removed chain → first unfinished chain | Pass |
 | E9 | Last chain → recap → Next → "You finished every chain!" → History | Pass |
 
+## Letter check (phase 09)
+
+Run in the web build with Playwright (no screenshots kept).
+
+| # | Check | Result |
+|---|---|---|
+| L1 | Same-length wrong guess: row appears with correct marks; copy "Not quite — {n} right, {m} elsewhere." | Pass |
+| L2 | Different-length guess: "Not quite — the answer has {N} letters.", no row | Pass |
+| L3 | No letters match: "No letters match — try another word." | Pass |
+| L4 | Same-length near miss: "So close!" copy, row added, no penalty | Pass |
+| L5 | Repeated letters (KITTEN/TITLES, HONEY/HOOPS) | Pass (unit tests) |
+| L6 | At most 3 rows; the oldest drops off | Pass |
+| L7 | Rows survive a reload mid-link and clear on solve, Reveal and Restart | Pass (reload in browser; Reveal and Restart in unit tests) |
+| L8 | Save from before phase 09 (no `checkedGuesses`) loads without error | Pass (unit test) |
+| L9 | Row label and live-region detail ("Your guess ANTELOPE. Elsewhere: …") | Pass (DOM) |
+| L10 | 9-letter answer with 3 rows at 390×844, 430×932 and 360×740: rows inside the card, no horizontal scroll | Pass |
+| L11 | Compact card (360×560): newest row only | Pass |
+| L12 | 12-letter answer at 360×740 and 320×640 (temporary QA chain, not committed): rows inside the card, input above the tab bar | Pass (fixed: see note 4) |
+| L13 | Guide shows the Letter check section with the TITLES example | Pass |
+
 ## Score math (by hand against `GAME_RULES.md`)
 
 Chain 1 played with 2 hints, 3 misses and 1 reveal:
@@ -105,3 +125,4 @@ Chain 1 played with 2 hints, 3 misses and 1 reveal:
 1. **Announcements on web.** React Native Web's `AccessibilityInfo.announceForAccessibility` is a no-op, so link changes, chain complete, tutorial steps and "Copied!" were never announced on web. `lib/announce.ts` now uses the native API on iOS and Android, and a hidden `aria-live` region on web.
 2. **Long answers.** Content allows answers of up to 20 letters, but tiles only shrank to 12 px: a 12-letter answer got 17 px tiles at 360 wide, and a 20-letter one overflowed the card. Tiles now wrap onto up to 3 rows (at word boundaries when possible) when one row would drop below 22 px (`components/play/tileLayout.ts`, unit-tested). Answers up to 10 letters stay on one row.
 3. **Lint.** ESLint (`eslint-config-expo`) is now set up and clean. Fixes covered a ref written during render, `Date.now()` during render, effect-driven state in the toast, sheet and tiles, and shared values now use `.set()`. The two effects that turn the reducer's verdict into feedback keep a documented `eslint-disable`.
+4. **Long answers with letter check.** With a 12-letter answer at 360 wide, each guess wraps onto two lines, and 3 guesses pushed the answer input under the tab bar. When a guess has to wrap, only the newest row is shown now (`components/play/GuessRows.tsx`, DESIGN_SPEC §2.4).

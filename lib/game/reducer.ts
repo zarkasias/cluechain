@@ -1,4 +1,5 @@
 import { isCorrect, isNearMiss, maxHintLetters, normalize } from './answers';
+import { addCheckedGuess, checkLetters, coerceCheckedGuesses } from './letters';
 import { chainScore, linkValue, newLinkState, stars } from './scoring';
 import { applyFirstCompletion, emptyStats, localDayISO } from './stats';
 import type { Chain, ChainResult, Completion, GameAction, GameState, LinkState, SaveV2, Settings } from './types';
@@ -25,6 +26,7 @@ export function createInitialState(chains: Chain[]): GameState {
     links: freshLinks(),
     elapsedMs: 0,
     lastOutcome: null,
+    lastCheck: null,
     completion: null,
     history: {},
     stats: emptyStats(),
@@ -115,7 +117,16 @@ export function toSave(state: GameState): SaveV2 {
 // ---------- reducer ----------
 
 function startChain(state: GameState, chainId: string | null): GameState {
-  return { ...state, chainId, linkIndex: 0, links: freshLinks(), elapsedMs: 0, lastOutcome: null, completion: null };
+  return {
+    ...state,
+    chainId,
+    linkIndex: 0,
+    links: freshLinks(),
+    elapsedMs: 0,
+    lastOutcome: null,
+    lastCheck: null,
+    completion: null,
+  };
 }
 
 function updateLink(links: LinkState[], index: number, patch: Partial<LinkState>): LinkState[] {
@@ -128,13 +139,14 @@ function updateLink(links: LinkState[], index: number, patch: Partial<LinkState>
 
 /** Marks the current link solved, then either advances or records the completion. */
 function solveCurrentLink(state: GameState, revealed: boolean, now: number): GameState {
-  const links = updateLink(state.links, state.linkIndex, { solved: true, revealed });
+  const links = updateLink(state.links, state.linkIndex, { solved: true, revealed, checkedGuesses: [] });
   const isLast = state.linkIndex >= LINKS_PER_CHAIN - 1;
   const next: GameState = {
     ...state,
     links,
     linkIndex: isLast ? state.linkIndex : state.linkIndex + 1,
     lastOutcome: revealed ? null : 'correct',
+    lastCheck: null,
   };
   if (!isLast) return next;
 
@@ -211,6 +223,7 @@ function hydrate(chains: Chain[], state: GameState, save: SaveV2): GameState {
     settings: save.settings,
     hydrated: true,
     lastOutcome: null,
+    lastCheck: null,
     completion: null,
   };
   const p = save.progress;
@@ -228,7 +241,7 @@ function hydrate(chains: Chain[], state: GameState, save: SaveV2): GameState {
   if (!progressOk || !p) {
     return startChain(base, firstUnfinishedChainId(chains, save.history));
   }
-  const links = p.links.map((l) => ({ ...l, value: linkValue(l) }));
+  const links = p.links.map((l) => ({ ...l, checkedGuesses: coerceCheckedGuesses(l.checkedGuesses), value: linkValue(l) }));
   const complete = links.every((l) => l.solved);
   let completion: Completion | null = null;
   if (complete) {
@@ -258,24 +271,32 @@ export function createReducer(chains: Chain[]) {
         if (isCorrect(action.guess, link)) {
           return solveCurrentLink(state, false, action.now ?? Date.now());
         }
+        const current = state.links[state.linkIndex];
+        const lastCheck = checkLetters(action.guess, link);
+        const checkedGuesses = lastCheck ? addCheckedGuess(current.checkedGuesses, action.guess) : current.checkedGuesses;
         if (isNearMiss(action.guess, link)) {
-          return { ...state, lastOutcome: 'near' };
+          return { ...state, links: updateLink(state.links, state.linkIndex, { checkedGuesses }), lastOutcome: 'near', lastCheck };
         }
-        const wrongGuesses = state.links[state.linkIndex].wrongGuesses + 1;
         return {
           ...state,
-          links: updateLink(state.links, state.linkIndex, { wrongGuesses }),
+          links: updateLink(state.links, state.linkIndex, { wrongGuesses: current.wrongGuesses + 1, checkedGuesses }),
           lastOutcome: 'wrong',
+          lastCheck,
         };
       }
 
       case 'CLEAR_FEEDBACK':
-        return state.lastOutcome === null ? state : { ...state, lastOutcome: null };
+        return state.lastOutcome === null && state.lastCheck === null ? state : { ...state, lastOutcome: null, lastCheck: null };
 
       case 'HINT': {
         if (!canHint(chains, state)) return state;
         const hintLetters = state.links[state.linkIndex].hintLetters + 1;
-        return { ...state, links: updateLink(state.links, state.linkIndex, { hintLetters }), lastOutcome: null };
+        return {
+          ...state,
+          links: updateLink(state.links, state.linkIndex, { hintLetters }),
+          lastOutcome: null,
+          lastCheck: null,
+        };
       }
 
       case 'REVEAL': {

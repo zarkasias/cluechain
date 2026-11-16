@@ -9,6 +9,7 @@ const link = (patch: Partial<LinkState> = {}): LinkState => ({
   revealed: false,
   solved: true,
   value: 100,
+  checkedGuesses: [],
   ...patch,
 });
 

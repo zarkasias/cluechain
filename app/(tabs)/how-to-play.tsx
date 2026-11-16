@@ -17,9 +17,12 @@ import { guideExampleLinks } from '@/data/tutorial';
 import { color, layout, radius, space, type } from '@/constants/theme';
 import ClueCard from '@/components/play/ClueCard';
 import LetterTiles from '@/components/play/LetterTiles';
+import GuessRows from '@/components/play/GuessRows';
 import ChainTrack from '@/components/play/ChainTrack';
 
 const solvedAll = guideExampleLinks.map(() => ({ solved: true, revealed: false }));
+/** The letter-check example from DESIGN_SPEC §7: answer KITTEN, guess TITLES. */
+const letterCheckLink = { clue: 'A baby cat is called this', answer: 'kitten' };
 
 /** A small illustration made from the real Play components. Hidden from screen readers (the step text says it). */
 function Illustration({ children }: { children: ReactNode }) {
@@ -124,6 +127,26 @@ export default function GuideScreen() {
 
         <View style={styles.section}>
           <Text style={styles.heading} accessibilityRole="header">
+            Letter check
+          </Text>
+          <Text style={styles.paragraph}>
+            Guess a word with the right number of letters and we&rsquo;ll mark each one: ✓ right spot, ● in the
+            word but somewhere else, plain means not in the word.
+          </Text>
+          {/* Hidden from screen readers: the paragraph above says it. */}
+          <View
+            style={styles.letterCard}
+            importantForAccessibility="no-hide-descendants"
+            aria-hidden
+            pointerEvents="none"
+          >
+            <LetterTiles link={letterCheckLink} hintLetters={0} maxSize={30} />
+            <GuessRows link={letterCheckLink} guesses={['titles']} maxSize={36} />
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.heading} accessibilityRole="header">
             Stars
           </Text>
           <View style={styles.starRow}>
@@ -215,6 +238,16 @@ const styles = StyleSheet.create({
     ...type.body,
     flex: 1,
     color: color.ink,
+  },
+  paragraph: {
+    ...type.body,
+    color: color.ink,
+  },
+  letterCard: {
+    backgroundColor: color.card,
+    borderRadius: radius.lg,
+    padding: space.lg,
+    gap: space.md,
   },
   bullet: {
     flexDirection: 'row',

@@ -32,6 +32,9 @@ export const color = {
   tileBorder:  '#C9D1E3',
   slotEmpty:   '#24375C', // future chain slot on bg
   focus:       '#60A5FA',
+  successDeep:   '#047857', // "right" letter border        (5.5:1 on card; `success` is only 2.5:1)
+  elsewhere:     '#2563EB', // "elsewhere" letter border     (5.2:1 on card)
+  elsewhereSoft: '#DBEAFE', // "elsewhere" letter fill       (cardInk on it: 13.1:1)
 };
 export const space  = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 };
 export const radius = { sm: 8, md: 12, lg: 16, pill: 999 };
@@ -100,7 +103,21 @@ Remove every gradient from cards and buttons. The only gradient allowed is the l
 - One tile per letter of the canonical answer. Multi-word answers show a gap between words.
 - Tile size = `min(44, floor((cardInnerWidth − gaps) / letters))`, with a gap of 6. This must fit 12 letters at 360 wide.
 - States: empty (`tile` fill, `tileBorder` border), hinted (`goldSoft` fill, `cardInk` letter), correct (`successSoft` fill, `success` border — briefly after solving).
-- Tiles don't mirror what the player types. The input stays a normal text field: it's faster and works with autocorrect off and with screen readers. Tiles show length and hints only.
+- Tiles don't mirror what the player types. The input stays a normal text field: it's faster and works with autocorrect off and with screen readers. Tiles show length and hints only. Guess rows (below) are the one exception: they show *submitted* guesses, never live typing.
+
+#### Guess rows (letter check, `components/play/GuessRows.tsx`)
+- Below the answer tiles and inside the ClueCard, show up to 3 rows: the checked guesses for this link (GAME_RULES "Letter check"), oldest at the top. Each row uses the same layout as the answer tiles, at 80% of their size (minimum 22).
+- A new row's tiles flip in left to right (60 ms stagger). With reduced motion they appear at once.
+- Tile states. The fills alone don't tell the states apart (successSoft and elsewhereSoft are only 1.1:1), so each state also has its own border and marker:
+
+  | Mark | Fill | Border | Marker | Letter |
+  |---|---|---|---|---|
+  | right | successSoft | 2 px solid successDeep | ✓ in the bottom-right corner | cardInk |
+  | elsewhere | elsewhereSoft | 2 px **dashed** elsewhere | ● in the top-right corner | cardInk |
+  | absent | tile | none | none | cardMuted (5.2:1) |
+
+- The rows clear when the link is solved, revealed or restarted.
+- On a short screen (compact ClueCard), or when a guess has to wrap onto more than one line (long answers on narrow screens), show only the newest row.
 
 ### 2.5 AnswerInput
 - A full-width field, 52 high, `radius.md`, white with `tileBorder`; on focus the border is `focus` colour and 2 px.
@@ -113,12 +130,15 @@ A single line between the card and the input, with a fixed height of 24 so the l
 
 | Situation | Copy | Visual | Haptic |
 |---|---|---|---|
-| Wrong | "Not quite — try again." (rotate with "Nope, keep going!" / "Not that one.") | input shakes (4 × 8 px, 240 ms), red border | `notificationAsync(Error)` |
+| Wrong, same length | "Not quite — {n} right, {m} elsewhere." (with no matches: "No letters match — try another word.") | input shakes (4 × 8 px, 240 ms), red border, and the new guess row flips in | `notificationAsync(Error)` |
+| Wrong, different length | "Not quite — the answer has {N} letters." | input shakes, red border | `notificationAsync(Error)` |
 | Near miss | "So close! Check your spelling." | gold border, no shake | `impactAsync(Light)` |
 | Correct | "Nice! {WORD} joins the chain." | green border | `notificationAsync(Success)` |
 | Hint | "Hint used: −20" | the new tile flips in | `selectionAsync()` |
 
-The message and border colour clear **as soon as the player edits the input**.
+The message and border colour clear **as soon as the player edits the input**. Guess rows stay until the link ends.
+
+A near miss keeps its "So close!" copy. If it's the same length, its guess row is shown too. The tutorial keeps the rotating wrong copy ("Not quite — try again." / "Nope, keep going!" / "Not that one.") and has no letter check.
 
 ### 2.7 ActionBar (D7)
 Three text+icon buttons in a row, each at least 44 high, in `inkMuted` colour on `bg`. Use lucide icons (already installed).
@@ -214,6 +234,7 @@ Replace the content with:
   2. Your answer appears in the next clue, highlighted in pink.
   3. Link 5 answers to complete the chain.
 - **Scoring** — Each link is worth up to 100. Hints cost 20 per letter. A wrong guess costs 10. A revealed word scores 0. Finish without hints for a +100 perfect bonus.
+- **Letter check** (after Scoring) — "Guess a word with the right number of letters and we'll mark each one: ✓ right spot, ● in the word but somewhere else, plain means not in the word." Illustrate it with a real GuessRows: answer KITTEN, guess TITLES.
 - **Stars** — ★★★ no hints or reveals and 2 or fewer misses · ★★ no reveals · ★ completed.
 - **Replay tutorial** button.
 
@@ -240,6 +261,9 @@ Replace the content with:
   - Hint: "Hint, costs 20 points".
   - Each tile isn't individually focusable. The tile row has the label "Answer, 5 letters. Revealed: H".
   - LinkChip: read inline as the word itself.
+- A guess row is one element, not individually focusable tiles. Its label is "Your guess TITLES. Right: I in spot 2, T in spot 3, E in spot 5. Elsewhere: T. Not in the word: L, S."
+- After a checked guess, the announcement is the feedback line followed by the row label.
+- Nothing depends on colour alone: right and elsewhere differ in border style (solid / dashed) and marker (✓ / ●) as well as fill.
 - Feedback is announced (see 2.6). On link change, announce "Link 3 of 5. {clue text without braces}".
 - Reduced motion is respected everywhere (section 3).
 - The web build is keyboard-operable: Enter submits, and Tab order is input → submit → hint → reveal → restart.

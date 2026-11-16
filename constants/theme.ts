@@ -24,6 +24,10 @@ export const color = {
   tileBorder: '#C9D1E3',
   slotEmpty: '#24375C', // future chain slot on bg
   focus: '#60A5FA',
+  // Letter check (DESIGN_SPEC §2.4 Guess rows). The fills alone are only 1.1:1 apart, so borders and markers differ too.
+  successDeep: '#047857', // "right" letter border        (5.5:1 on card)
+  elsewhere: '#2563EB', // "elsewhere" letter border     (5.2:1 on card)
+  elsewhereSoft: '#DBEAFE', // "elsewhere" letter fill       (cardInk on it: 13.1:1)
   // Not in DESIGN_SPEC §1's table, but named in the spec text (§2.3 shadow, §2.7 scrim, §9 tab border).
   white: '#FFFFFF',
   shadow: 'rgba(0,0,0,0.25)',

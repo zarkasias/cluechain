@@ -11,7 +11,7 @@ export const THREE_STAR_MAX_WRONG = 2;
 export const TWO_STAR_MAX_HINTS = 3;
 
 export function newLinkState(): LinkState {
-  return { hintLetters: 0, wrongGuesses: 0, revealed: false, solved: false, value: LINK_START_VALUE };
+  return { hintLetters: 0, wrongGuesses: 0, revealed: false, solved: false, value: LINK_START_VALUE, checkedGuesses: [] };
 }
 
 /** A link's value: 100 minus penalties, never below 10, or 0 if revealed. */

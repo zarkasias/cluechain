@@ -1,3 +1,5 @@
+import type { CheckedLetter } from './letters';
+
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
 export type Link = {
@@ -24,6 +26,8 @@ export type LinkState = {
   solved: boolean;
   /** Current value of this link, per the scoring rules. */
   value: number;
+  /** Normalized guesses that got a letter check, newest last (GAME_RULES "Letter check"). */
+  checkedGuesses: string[];
 };
 
 export type Stars = 1 | 2 | 3;
@@ -114,6 +118,8 @@ export type GameState = {
   links: LinkState[];
   elapsedMs: number;
   lastOutcome: Outcome | null;
+  /** Letter marks for the last judged guess; `null` when it wasn't checked (wrong length, or correct). */
+  lastCheck: CheckedLetter[] | null;
   /** Set when the current chain is complete; `null` otherwise. */
   completion: Completion | null;
   history: History;

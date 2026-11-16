@@ -4,7 +4,12 @@ import { Check, Lightbulb, Sparkles, X } from 'lucide-react-native';
 import { color, space, type } from '@/constants/theme';
 
 export type Feedback =
+  /** Tutorial only: rotating copy, no letter check. */
   | { kind: 'wrong'; variant: number }
+  /** A wrong guess of the right length (letter check). */
+  | { kind: 'checked'; right: number; elsewhere: number }
+  /** A wrong guess of a different length. */
+  | { kind: 'length'; letters: number }
   | { kind: 'near' }
   | { kind: 'correct'; word: string }
   | { kind: 'hint'; cost: number }
@@ -19,6 +24,12 @@ export function feedbackMessage(feedback: Feedback): string {
   switch (feedback.kind) {
     case 'wrong':
       return WRONG_COPY[feedback.variant % WRONG_COPY.length];
+    case 'checked':
+      return feedback.right + feedback.elsewhere === 0
+        ? 'No letters match — try another word.'
+        : `Not quite — ${feedback.right} right, ${feedback.elsewhere} elsewhere.`;
+    case 'length':
+      return `Not quite — the answer has ${feedback.letters} letters.`;
     case 'near':
       return 'So close! Check your spelling.';
     case 'correct':
@@ -32,20 +43,29 @@ export function feedbackMessage(feedback: Feedback): string {
 
 const ICONS = {
   wrong: { Icon: X, tint: color.error },
+  checked: { Icon: X, tint: color.error },
+  length: { Icon: X, tint: color.error },
   near: { Icon: Sparkles, tint: color.gold },
   correct: { Icon: Check, tint: color.success },
   hint: { Icon: Lightbulb, tint: color.gold },
   answer: { Icon: Lightbulb, tint: color.gold },
 } as const;
 
+type FeedbackLineProps = {
+  feedback: Feedback;
+  /** Read after the message but not shown, e.g. the letter-check row (DESIGN_SPEC §10). */
+  detail?: string | null;
+};
+
 /** A fixed-height line between the card and the input, announced to screen readers. */
-export default function FeedbackLine({ feedback }: { feedback: Feedback }) {
+export default function FeedbackLine({ feedback, detail = null }: FeedbackLineProps) {
   const message = feedbackMessage(feedback);
+  const spoken = message && detail ? `${message} ${detail}` : message;
 
   useEffect(() => {
     // Android and web use the live region; iOS needs an explicit announcement.
-    if (message && Platform.OS === 'ios') AccessibilityInfo.announceForAccessibility(message);
-  }, [message, feedback]);
+    if (spoken && Platform.OS === 'ios') AccessibilityInfo.announceForAccessibility(spoken);
+  }, [spoken, feedback]);
 
   const icon = feedback ? ICONS[feedback.kind] : null;
 
@@ -55,6 +75,7 @@ export default function FeedbackLine({ feedback }: { feedback: Feedback }) {
       <Text style={styles.text} numberOfLines={1} maxFontSizeMultiplier={1.3}>
         {message}
       </Text>
+      {message && detail ? <Text style={styles.srOnly}>{detail}</Text> : null}
     </View>
   );
 }
@@ -66,6 +87,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space.xs,
     paddingHorizontal: space.xs,
+  },
+  /** Visually hidden but read by the live region. */
+  srOnly: {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    overflow: 'hidden',
+    opacity: 0,
   },
   text: {
     ...type.body,

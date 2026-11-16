@@ -44,6 +44,70 @@ describe('reducer', () => {
     expect(s.links[0].value).toBe(90);
   });
 
+  describe('letter check', () => {
+    // classic-01 link 1 is "elephant" (8 letters); link 2 is "brain".
+    it('checks a wrong guess of the same length and keeps it on the link', () => {
+      const s = run(start(), guess('Antelope'));
+      expect(s.lastOutcome).toBe('wrong');
+      expect(s.lastCheck).toHaveLength(8);
+      expect(s.links[0]).toMatchObject({ wrongGuesses: 1, value: 90, checkedGuesses: ['antelope'] });
+    });
+
+    it('does not check a guess of a different length', () => {
+      const s = run(start(), guess('giraffe'));
+      expect(s.lastOutcome).toBe('wrong');
+      expect(s.lastCheck).toBeNull();
+      expect(s.links[0].checkedGuesses).toEqual([]);
+    });
+
+    it('checks a same-length near miss without a penalty', () => {
+      const s = run(start(), guess('elephanf'));
+      expect(s.lastOutcome).toBe('near');
+      expect(s.lastCheck).not.toBeNull();
+      expect(s.links[0]).toMatchObject({ wrongGuesses: 0, value: 100, checkedGuesses: ['elephanf'] });
+    });
+
+    it('keeps the last 3 checked guesses, and a repeat moves to the end', () => {
+      const clear: GameAction = { type: 'CLEAR_FEEDBACK' };
+      let s = run(start(), guess('aaaaaaaa'), clear, guess('bbbbbbbb'), clear, guess('cccccccc'), clear, guess('dddddddd'));
+      expect(s.links[0].checkedGuesses).toEqual(['bbbbbbbb', 'cccccccc', 'dddddddd']);
+      s = run(s, clear, guess('bbbbbbbb'));
+      expect(s.links[0].checkedGuesses).toEqual(['cccccccc', 'dddddddd', 'bbbbbbbb']);
+      expect(s.links[0].wrongGuesses).toBe(5);
+    });
+
+    it('clears checked guesses on solve, reveal and restart', () => {
+      let s = run(start(), guess('antelope'), { type: 'CLEAR_FEEDBACK' }, guess('elephant'));
+      expect(s.links[0].checkedGuesses).toEqual([]);
+      expect(s.lastCheck).toBeNull();
+      s = run(s, guess('brawn'), { type: 'REVEAL' });
+      expect(s.links[1].checkedGuesses).toEqual([]);
+      s = run(s, guess('xxxxx'), { type: 'RESTART' });
+      expect(s.links.every((l) => l.checkedGuesses.length === 0)).toBe(true);
+    });
+
+    it('CLEAR_FEEDBACK clears lastCheck but keeps the rows', () => {
+      const s = run(start(), guess('antelope'), { type: 'CLEAR_FEEDBACK' });
+      expect(s.lastCheck).toBeNull();
+      expect(s.links[0].checkedGuesses).toEqual(['antelope']);
+    });
+
+    it('survives a save and HYDRATE', () => {
+      const played = run(start(), guess('antelope'));
+      const resumed = run(start(), { type: 'HYDRATE', save: JSON.parse(JSON.stringify(toSave(played))) });
+      expect(resumed.links[0].checkedGuesses).toEqual(['antelope']);
+    });
+
+    it('HYDRATE loads a save from before phase 09 (no checkedGuesses) as []', () => {
+      const played = toSave(run(start(), guess('antelope')));
+      const old = JSON.parse(JSON.stringify(played));
+      for (const l of old.progress.links) delete l.checkedGuesses;
+      const resumed = run(start(), { type: 'HYDRATE', save: old });
+      expect(resumed.links.map((l) => l.checkedGuesses)).toEqual([[], [], [], [], []]);
+      expect(resumed.links[0].wrongGuesses).toBe(1);
+    });
+  });
+
   it('ignores empty guesses', () => {
     const s0 = start();
     expect(run(s0, guess('   '))).toBe(s0);

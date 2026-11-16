@@ -27,6 +27,36 @@ isNearMiss(guess, link): boolean
 
 Empty or whitespace-only guesses are ignored: they aren't counted as a miss.
 
+## Letter check (`lib/game/letters.ts`)
+
+A wrong guess with the same number of letters as the answer is checked letter by letter, as in Wordle.
+
+```ts
+checkLetters(guess, link): CheckedLetter[] | null
+  // type CheckedLetter = { letter: string; mark: 'right' | 'elsewhere' | 'absent' }
+  // g = normalize(guess), a = normalize(link.answer)      (canonical answer only, never accept[])
+  // returns null if isCorrect(guess, link), or if g.length !== a.length
+  // otherwise:
+  //   1. every position where g[i] === a[i] is 'right'
+  //   2. count the answer letters NOT matched in step 1
+  //   3. left to right, each remaining g[i] is 'elsewhere' if that letter's count is > 0
+  //      (then decrement the count); otherwise 'absent'
+  // multi-word answers compare their letters with spaces removed ("ice cream" → "icecream")
+```
+
+| Answer | Guess | Marks |
+|---|---|---|
+| kitten | titles | T elsewhere, I right, T right, L absent, E right, S absent |
+| honey | hoops | H right, O right, O absent (only one O), P absent, S absent |
+| puddle | paddle | P right, A absent, D right, D right, L right, E right |
+| boots | wellies | `null` (an accepted form, so it's correct, not checked) |
+| pillow | pill | `null` (different length) |
+
+- Checked guesses, wrong or near miss, are kept per link in `checkedGuesses` (normalized, newest last, at most **3**). Typing a guess that's already in the list moves it to the end instead of adding a copy.
+- They are cleared when the link is solved or revealed, and on Restart.
+- There's no dictionary check: any letters are checked.
+- Letter check never changes the main answer tiles. They still show the length and hints only.
+
 ## Scoring (`lib/game/scoring.ts`)
 
 The score is calculated **per link**, so it can never go negative or be farmed.
@@ -35,6 +65,7 @@ The score is calculated **per link**, so it can never go negative or be farmed.
 |---|---|
 | Link starts | value = **100** |
 | Wrong guess (not a near miss) | −10 |
+| Wrong guess, same length as the answer | −10, and the letter check is shown (see "Letter check") |
 | Near miss | no penalty (it's encouragement) |
 | Hint (reveals the next letter in the tiles) | −20 per letter |
 | Reveal word | value = **0** and the link is marked `revealed` |
@@ -93,7 +124,7 @@ type SaveV2 = {
   progress: {
     chainId: string;
     linkIndex: number;            // 0–4
-    links: LinkState[];           // per link: { hintLetters, wrongGuesses, revealed, solved, value }
+    links: LinkState[];           // per link: { hintLetters, wrongGuesses, revealed, solved, value, checkedGuesses }
     elapsedMs: number;
   } | null;
   history: Record<string, { stars: 1|2|3; bestScore: number; bestTimeMs: number; firstCompletedAt: string }>;
@@ -102,6 +133,7 @@ type SaveV2 = {
 };
 ```
 
+- `checkedGuesses: string[]` was added in phase 09 without a version bump. A missing or malformed value loads as `[]`, so older saves need no migration.
 - Save is debounced (300 ms) after any state change, and also on `AppState` → background.
 - **Migration:** if `cluechain:v2` is missing and the legacy key `gameStats` exists, map `chainsCompleted`, `hintsUsed`, `wordsGuessed → wordsSolved` and `totalPoints`, then delete the legacy key.
 - Corrupt JSON → log it, start fresh, and never crash.

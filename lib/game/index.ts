@@ -1,6 +1,7 @@
 export * from './types';
 export * from './clue';
 export * from './answers';
+export * from './letters';
 export * from './scoring';
 export * from './stats';
 export * from './reducer';

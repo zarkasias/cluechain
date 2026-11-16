@@ -8,6 +8,7 @@ import {
   answerLetters,
   canHint,
   chainResult,
+  countMarks,
   chainScore,
   clueText,
   currentChain,
@@ -23,6 +24,7 @@ import PlayHeader from './play/PlayHeader';
 import ChainTrack, { ChainTrackHandle, Rect } from './play/ChainTrack';
 import ClueCard from './play/ClueCard';
 import LetterTiles, { LetterTilesHandle, TileFill } from './play/LetterTiles';
+import GuessRows, { describeGuess } from './play/GuessRows';
 import AnswerInput, { AnswerInputHandle, InputTone } from './play/AnswerInput';
 import FeedbackLine, { Feedback } from './play/FeedbackLine';
 import ActionBar from './play/ActionBar';
@@ -51,12 +53,14 @@ export default function GameScreen() {
   const dispatch = useGameDispatch();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { linkIndex, links, lastOutcome } = state;
+  const { linkIndex, links, lastOutcome, lastCheck } = state;
   const chain = currentChain(chains, state);
   const complete = isChainComplete(state);
 
   const [answer, setAnswer] = useState('');
   const [feedback, setFeedback] = useState<Feedback>(null);
+  /** The letter-check row label, read after the feedback line. */
+  const [feedbackDetail, setFeedbackDetail] = useState<string | null>(null);
   const [tone, setTone] = useState<InputTone>(null);
   const [shakeKey, setShakeKey] = useState(0);
   const [transition, setTransition] = useState<Transition | null>(null);
@@ -216,12 +220,18 @@ export default function GameScreen() {
       dispatch({ type: 'CLEAR_FEEDBACK' });
       startCarryOver(index, 'correct');
     } else if (lastOutcome === 'wrong') {
-      setFeedback({ kind: 'wrong', variant: links[linkIndex].wrongGuesses - 1 });
+      setFeedback(
+        lastCheck
+          ? { kind: 'checked', ...countMarks(lastCheck) }
+          : { kind: 'length', letters: answerLetters(chain.links[linkIndex]).length },
+      );
+      setFeedbackDetail(lastCheck ? describeGuess(lastCheck) : null);
       setTone('wrong');
       setShakeKey((k) => k + 1);
       haptics.error();
     } else if (lastOutcome === 'near') {
       setFeedback({ kind: 'near' });
+      setFeedbackDetail(lastCheck ? describeGuess(lastCheck) : null);
       setTone('near');
       haptics.light();
     }
@@ -240,6 +250,7 @@ export default function GameScreen() {
 
   const clearFeedback = () => {
     setFeedback(null);
+    setFeedbackDetail(null);
     setTone(null);
     if (lastOutcome === 'wrong' || lastOutcome === 'near') dispatch({ type: 'CLEAR_FEEDBACK' });
   };
@@ -352,13 +363,19 @@ export default function GameScreen() {
                 fill={transition && !transition.swapped ? transition.mode : null}
                 maxSize={compact ? 36 : 44}
               />
+              <GuessRows
+                link={chain.links[shownIndex]}
+                guesses={links[shownIndex].checkedGuesses}
+                maxSize={compact ? 36 : 44}
+                newestOnly={compact}
+              />
             </ClueCard>
           </Animated.View>
 
           <View style={wide ? null : styles.spacer} />
 
           <View style={[styles.bottom, { gap: compact ? space.xs : space.sm }]}>
-            <FeedbackLine feedback={feedback} />
+            <FeedbackLine feedback={feedback} detail={feedbackDetail} />
             <AnswerInput
               ref={inputRef}
               value={answer}
