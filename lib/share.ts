@@ -1,7 +1,7 @@
 import { Platform, Share } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import type { Chain, ChainResult, LinkState } from '@/lib/game';
-import { formatDuration } from '@/lib/format';
+import { DIFFICULTY_LABEL, formatDuration } from '@/lib/format';
 
 /** 🟩 clean solve · 🟨 solved with hints or misses · 🟥 revealed. */
 export function linkSquare(link: LinkState): string {
@@ -11,17 +11,18 @@ export function linkSquare(link: LinkState): string {
 }
 
 /**
- * The spoiler-free share text (DESIGN_SPEC §4). It never contains an answer or
- * any clue text, only the chain number, title, stars, score, time and squares.
+ * The spoiler-free share text (DESIGN_SPEC §4). It never contains an answer,
+ * any clue text or the chain title (titles name the first and last answers),
+ * only the chain number, difficulty, stars, score, time and squares.
  *
- *   Clue Chains #4 · Trunk to Time
+ *   Clue Chains #4 · Easy
  *   ★★★  370 pts  ⏱ 1:42
  *   🟩🟨🟩🟥🟩
  */
-export function buildShareText(chain: Pick<Chain, 'title'>, result: ChainResult, chainNumber: number): string {
+export function buildShareText(chain: Pick<Chain, 'difficulty'>, result: ChainResult, chainNumber: number): string {
   const stars = '★'.repeat(result.stars) + '☆'.repeat(3 - result.stars);
   return [
-    `Clue Chains #${chainNumber} · ${chain.title}`,
+    `Clue Chains #${chainNumber} · ${DIFFICULTY_LABEL[chain.difficulty]}`,
     `${stars}  ${result.score} pts  ⏱ ${formatDuration(result.timeMs)}`,
     result.links.map(linkSquare).join(''),
   ].join('\n');

@@ -53,7 +53,7 @@ A chain should **rise gently**: link 1 is the easiest, and links 4–5 are the h
 - Answers are lowercase and one word wherever possible. For a true two-word answer (`ice cream`), add the joined form to `accept` (`icecream`).
 - Use `accept` for genuine alternatives (`hour glass`, `sand timer`). Don't use it for partly-right answers.
 - Use American spelling and add British spellings to `accept` (`color`/`colour`).
-- Give each chain a title in the form "First to Last" or a playful phrase, 40 characters or fewer: "Ice to Eggs", "Cocoa to Chords".
+- Give each chain a title in the form "First to Last" or a playful phrase, 40 characters or fewer: "Ice to Eggs", "Cocoa to Chords". Players only see the title once they've finished the chain (on the recap screen and in Stats history), so a title may name the first and last answers. It's never shown during play or in the share text.
 - Answers at 10+ letters are allowed but rare (they make the tiles small).
 - Don't reuse an answer that already appears in 2 other chains.
 

@@ -340,10 +340,8 @@ export default function GameScreen() {
           chainNumber={chains.indexOf(chain) + 1}
           totalChains={chains.length}
           difficulty={chain.difficulty}
-          title={chain.title}
           score={chainScore(presentLinks)}
           replay={isReplay(state)}
-          compact={compact}
         />
         <ChainTrack ref={trackRef} chain={chain} links={presentLinks} currentIndex={trackCurrent} />
 

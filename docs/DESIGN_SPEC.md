@@ -57,7 +57,7 @@ Remove every gradient from cards and buttons. The only gradient allowed is the l
 
 ```
 ┌───────────────────────────────────────┐
-│ Chain 4 of 33 · Easy        ★ 1,240   │  ← Header (D8)
+│ Chain 4 of 33 · Easy        ★ 1,240   │  ← Header (D8), no title
 │ ●ELEPHANT━●BRAIN━◉ _ _ _ _ _━○ 5━○ 9  │  ← ChainTrack (D1)
 │                                       │
 │ ┌───────────────────────────────────┐ │
@@ -80,7 +80,8 @@ Remove every gradient from cards and buttons. The only gradient allowed is the l
 - Remove the large "ClueChain" title from the Play header. The landing page carries the brand; the header shows progress instead.
 
 ### 2.1 Header (D8)
-- Left: `Chain {n} of {total} · {Difficulty}` in `type.label`, colour `inkMuted`, with the chain **title** under it in `type.title`, colour `ink`.
+- Left: `Chain {n} of {total} · {Difficulty}` in `type.label`, colour `inkMuted`.
+- **No chain title during play.** Titles usually name the first and last answers ("Frog to Pillow"), so they would spoil the chain. The title is revealed on the recap screen, and is shown in Stats → History (completed chains only).
 - Right: a score pill, gold outline, star icon + the running **chain** score (not the lifetime total).
 - When points are earned, a `+100` (or the actual value) floats up from the pill and fades out (`motion.slow`), and the number counts up.
 
@@ -195,9 +196,9 @@ Shown in place of the Play content (same route) when the chain is complete.
 - Show the link clue in small `inkMuted` text under each connector (one line, truncated). This is optional on small screens.
 - **Share** uses RN `Share.share({ message })`. On web, use `navigator.share` when available, otherwise copy to the clipboard (`expo-clipboard`) and show the toast "Copied!".
 
-Share text (no answers, so it can't spoil):
+Share text (no answers and no title, so it can't spoil):
 ```
-Clue Chains #4 · Trunk to Time
+Clue Chains #4 · Easy
 ★★★  370 pts  ⏱ 1:42
 🟩🟨🟩🟥🟩
 ```

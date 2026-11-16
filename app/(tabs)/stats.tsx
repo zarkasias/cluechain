@@ -6,12 +6,11 @@ import type { LucideIcon } from 'lucide-react-native';
 import { ChevronRight, Eye, Flame, Lightbulb, Link, Play, Star, Timer, Trophy } from 'lucide-react-native';
 import { useChains, useGameDispatch, useGameState } from '@/context/GameContext';
 import { averageTimeMs, chainInProgress, displayStreak, historyRows, localDayISO } from '@/lib/game';
-import type { Difficulty, HistoryRow, Stars } from '@/lib/game';
-import { formatDuration } from '@/lib/format';
+import type { HistoryRow, Stars } from '@/lib/game';
+import { DIFFICULTY_LABEL, formatDuration } from '@/lib/format';
 import { color, layout, radius, space, type } from '@/constants/theme';
 import ConfirmSheet from '@/components/play/ConfirmSheet';
 
-const DIFFICULTY_LABEL: Record<Difficulty, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
 
 function HeroTile({ Icon, tint, value, label, caption }: { Icon: LucideIcon; tint: string; value: string; label: string; caption?: string }) {
   return (

@@ -8,22 +8,18 @@ import Animated, {
 import { Star } from 'lucide-react-native';
 import type { Difficulty } from '@/lib/game';
 import { useReduceMotion } from '@/context/GameContext';
+import { DIFFICULTY_LABEL } from '@/lib/format';
 import { color, motion, radius, space, type } from '@/constants/theme';
 
 type PlayHeaderProps = {
   chainNumber: number;
   totalChains: number;
   difficulty: Difficulty;
-  title: string;
   /** The running score for this chain. */
   score: number;
   /** Show the small "Replay" tag: this chain was already completed. */
   replay?: boolean;
-  /** Hide the title line when vertical space is tight (keyboard open on small phones). */
-  compact?: boolean;
 };
-
-const DIFFICULTY_LABEL: Record<Difficulty, string> = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
 
 /** Counts the displayed number up to `target` over `duration` ms. */
 function useCountUp(target: number, duration: number, animate: boolean) {
@@ -55,7 +51,11 @@ function useCountUp(target: number, duration: number, animate: boolean) {
   return shown;
 }
 
-export default function PlayHeader({ chainNumber, totalChains, difficulty, title, score, replay, compact }: PlayHeaderProps) {
+/**
+ * Chain number, difficulty and score. The chain's title is not shown here: titles name the
+ * first and last answers, so they only appear once the chain is finished (DESIGN_SPEC §2.1).
+ */
+export default function PlayHeader({ chainNumber, totalChains, difficulty, score, replay }: PlayHeaderProps) {
   const reduceMotion = useReduceMotion();
   const shown = useCountUp(score, motion.slow, !reduceMotion);
 
@@ -103,11 +103,6 @@ export default function PlayHeader({ chainNumber, totalChains, difficulty, title
             </View>
           )}
         </View>
-        {!compact && (
-          <Text style={styles.title} numberOfLines={1}>
-            {title}
-          </Text>
-        )}
       </View>
 
       <View style={styles.pillWrap}>
@@ -157,10 +152,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 16,
     color: color.inkMuted,
-  },
-  title: {
-    ...type.title,
-    color: color.ink,
   },
   pillWrap: {
     flexShrink: 0,

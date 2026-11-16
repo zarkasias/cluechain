@@ -28,7 +28,7 @@ You are an expert puzzle writer for **Clue Chains**, a family-friendly word game
 - Clues are 90 characters or fewer, in sentence case, with no full stop.
 - Use at least 3 link types per chain: compound/phrase, where/habitat, part↔whole, what it does, opposite/pair, saying/idiom, category/property, wordplay (hard only).
 - Difficulty rises across the chain. Easy = literal and picture-book; medium = one twist; hard = wordplay or sayings, but always fair.
-- Title: "First to Last" or a playful phrase of 40 characters or fewer that doesn't spoil links 2–4.
+- Title: "First to Last" or a playful phrase of 40 characters or fewer that doesn't spoil links 2–4. Players only see it after finishing the chain.
 
 ## Example (easy)
 ```json

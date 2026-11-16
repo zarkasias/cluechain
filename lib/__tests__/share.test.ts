@@ -28,19 +28,19 @@ const result = (patch: Partial<ChainResult> = {}): ChainResult => ({
 
 describe('buildShareText', () => {
   it('matches the format in DESIGN_SPEC §4 exactly', () => {
-    expect(buildShareText({ title: 'Trunk to Time' }, result(), 4)).toBe(
-      'Clue Chains #4 · Trunk to Time\n★★★  370 pts  ⏱ 1:42\n🟩🟨🟩🟥🟩',
+    expect(buildShareText({ difficulty: 'easy' }, result(), 4)).toBe(
+      'Clue Chains #4 · Easy\n★★★  370 pts  ⏱ 1:42\n🟩🟨🟩🟥🟩',
     );
   });
 
   it('shows empty stars for fewer than 3', () => {
-    expect(buildShareText({ title: 'T' }, result({ stars: 1 }), 1).split('\n')[1]).toBe('★☆☆  370 pts  ⏱ 1:42');
-    expect(buildShareText({ title: 'T' }, result({ stars: 2 }), 1).split('\n')[1]).toBe('★★☆  370 pts  ⏱ 1:42');
+    expect(buildShareText({ difficulty: 'easy' }, result({ stars: 1 }), 1).split('\n')[1]).toBe('★☆☆  370 pts  ⏱ 1:42');
+    expect(buildShareText({ difficulty: 'easy' }, result({ stars: 2 }), 1).split('\n')[1]).toBe('★★☆  370 pts  ⏱ 1:42');
   });
 
   it('formats short and long times as m:ss', () => {
-    expect(buildShareText({ title: 'T' }, result({ timeMs: 7_400 }), 1)).toContain('⏱ 0:07');
-    expect(buildShareText({ title: 'T' }, result({ timeMs: 754_000 }), 1)).toContain('⏱ 12:34');
+    expect(buildShareText({ difficulty: 'easy' }, result({ timeMs: 7_400 }), 1)).toContain('⏱ 0:07');
+    expect(buildShareText({ difficulty: 'easy' }, result({ timeMs: 754_000 }), 1)).toContain('⏱ 12:34');
   });
 
   it('marks hints and misses yellow, reveals red, clean solves green', () => {
@@ -53,13 +53,14 @@ describe('buildShareText', () => {
         link({ hintLetters: 1 }),
       ],
     });
-    expect(buildShareText({ title: 'T' }, r, 1).split('\n')[2]).toBe('🟨🟥🟩🟨🟨');
+    expect(buildShareText({ difficulty: 'easy' }, r, 1).split('\n')[2]).toBe('🟨🟥🟩🟨🟨');
   });
 
-  it.each(chains.map((c, i) => [c.id, c, i] as const))('contains no answers or clue text (%s)', (_id, chain, i) => {
+  it.each(chains.map((c, i) => [c.id, c, i] as const))('contains no title, answers or clue text (%s)', (_id, chain, i) => {
     const text = buildShareText(chain, result({ chainId: chain.id }), i + 1).toLowerCase();
-    // Strip the title, which is meant to be shared, then look for any answer or clue.
-    const body = text.replace(chain.title.toLowerCase(), '');
+    // Titles name the first and last answers, so they must not be shared either.
+    expect(text).not.toContain(chain.title.toLowerCase());
+    const body = text;
     for (const l of chain.links) {
       for (const answer of [l.answer, ...(l.accept ?? [])]) {
         expect(body).not.toContain(answer.toLowerCase());
